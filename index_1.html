@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NEXORA — Startup Investment Simulation</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F8F8F7;color:#1a1a1a;font-size:14px}
+#app{max-width:760px;margin:0 auto;padding:1.5rem;min-height:100vh}
+h1{font-size:21px;font-weight:700;margin-bottom:6px}
+h2{font-size:16px;font-weight:700;margin-bottom:6px}
+p{line-height:1.65;color:#444;font-size:13px}
+.card{background:#fff;border:1px solid #E5E5E3;border-radius:10px;padding:1rem 1.25rem;margin-bottom:.75rem}
+.card-hi{border-left:3px solid #4F46E5}
+.btn{padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:opacity .15s;display:inline-block}
+.btn-p{background:#4F46E5;color:#fff}
+.btn-p:disabled{opacity:.35;cursor:not-allowed}
+.btn-g{background:transparent;border:1px solid #D1D1CF;color:#333}
+.btn-w{width:100%;display:block;text-align:center;margin-top:.75rem}
+.btn:hover:not(:disabled){opacity:.85}
+.badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;display:inline-block}
+.b-blue{background:#EEF2FF;color:#4F46E5}
+.b-green{background:#ECFDF5;color:#059669}
+.b-red{background:#FEF2F2;color:#DC2626}
+.b-amber{background:#FFFBEB;color:#D97706}
+label{font-size:11px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px}
+input[type=text],input[type=password],select,textarea{width:100%;background:#F9F9F8;border:1px solid #E5E5E3;border-radius:7px;padding:8px 10px;font-size:13px;color:#1a1a1a;outline:none;font-family:inherit}
+input[type=text]:focus,input[type=password]:focus,select:focus,textarea:focus{border-color:#4F46E5}
+input[type=number]{background:#F9F9F8;border:1px solid #E5E5E3;border-radius:6px;padding:5px 8px;font-size:13px;color:#1a1a1a;outline:none;width:70px;text-align:right}
+input[type=range]{width:100%;accent-color:#4F46E5}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.row{display:flex;align-items:center;gap:10px}
+.tag{font-size:11px;background:#F3F4F6;color:#555;padding:2px 8px;border-radius:4px;display:inline-block;margin:2px}
+hr{border:none;border-top:1px solid #E5E5E3;margin:.75rem 0}
+.domain-hd{font-size:11px;font-weight:700;color:#4F46E5;text-transform:uppercase;letter-spacing:.08em;margin:1rem 0 .4rem;padding-bottom:4px;border-bottom:2px solid #EEF2FF}
+.exp-row{display:flex;align-items:flex-start;gap:10px;padding:.55rem 0;border-bottom:1px solid #F3F4F6}
+.exp-lbl{font-size:13px;font-weight:500;color:#1a1a1a}
+.exp-desc{font-size:11px;color:#888;margin-top:2px}
+.exp-cost{font-size:10px;color:#bbb;margin-top:1px}
+.bb{height:5px;background:#F0F0EE;border-radius:3px;overflow:hidden;margin:.4rem 0}
+.bf{height:100%;border-radius:3px;background:#4F46E5;transition:width .2s}
+.bf.over{background:#DC2626}
+.bf.full{background:#059669}
+.crisis-opt{padding:10px;border-radius:8px;border:1px solid #E5E5E3;cursor:pointer;font-size:13px;text-align:center;transition:all .15s;background:#F9F9F8}
+.crisis-opt.sel{border-color:#4F46E5;background:#EEF2FF;font-weight:700;color:#4F46E5}
+.ibox{background:#F9F9F8;border:1px solid #E5E5E3;border-radius:8px;padding:.75rem 1rem;font-size:13px;color:#555;line-height:1.6;margin-bottom:.75rem}
+.muted{color:#888;font-size:12px}
+.bold{font-weight:700}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const SB_URL = 'https://wkrgdznbyfixsilwydob.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indrcmdkem5ieWZpeHNpbHd5ZG9iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNTMwMTYsImV4cCI6MjEwMDcyOTAxNn0.qRa1hvVFwUQmjUMQwkU-0zT3EH0Fzmc6CLk_6H_fWgg';
+const db = supabase.createClient(SB_URL, SB_KEY);
+
+const BUDGET = 100000000;
+const fmt = n => { if(!n)return'Rs.0'; if(n>=10000000)return'Rs.'+(n/10000000).toFixed(2)+' Cr'; if(n>=100000)return'Rs.'+Math.round(n/100000)+'L'; return'Rs.'+Math.round(n).toLocaleString('en-IN'); };
+const wc = s => s?s.trim().split(/\s+/).filter(Boolean).length:0;
+const $=id=>document.getElementById(id);
+const app=()=>$('app');
+
+const STARTUPS = [
+  {id:'tradetab',name:'TradeTab',sector:'FinTech',stage:'Pre-MVP',founder:'Aryan Mehta',location:'Pune',mrr:'Rs.0 (pre-product)',team:'Solo founder',
+   tagline:'Credit and inventory management for 60 million small retailers',
+   pitch:'Mobile app letting small retailers track customer credit, manage dues, and access embedded working capital. Aryan validated the problem with 80+ shop owner interviews in Pune. No product built yet — pure concept with strong demand signal.',
+   workDone:'80+ customer discovery interviews done. UX wireframes in progress. No technical co-founder.',
+   roadmap:'Build MVP, pilot with 100 shops, then GTM. External funding not required at this stage.',
+   quote:'"Shop owners are still using paper khata books in 2025. That is a Rs.40,000 Cr opportunity sitting untouched."',
+   signals:['Strong grassroots demand validated','No product exists yet','No technical co-founder']},
+  {id:'medilingo',name:'MediLingo',sector:'HealthTech / AI',stage:'Early Prototype',founder:'Priya Nair & Dev Sharma',location:'Hyderabad',mrr:'Rs.0 (pre-product)',team:'2 co-founders (doctor + engineer)',
+   tagline:'AI wearable that breaks the language barrier between rural patients and doctors',
+   pitch:'Clip-on AI wearable for rural doctors that translates 12 Indian regional languages in real time, processes patient symptoms, and suggests probable diagnoses. Designed for primary health centres where language is a life-or-death barrier.',
+   workDone:'Early hardware prototype built. Language model in training. CDSCO certification not yet initiated.',
+   roadmap:'Complete prototype, accuracy testing, CDSCO certification, pilot with 20 PHCs, then manufacturing.',
+   quote:'"The doctor and the patient spoke different languages. The patient left undiagnosed. That is what we are fixing."',
+   signals:['Hardware = high capital requirement','CDSCO Class B certification mandatory','B2B model: hospitals, PHCs, state govt']},
+  {id:'quizforge',name:'QuizForge',sector:'EdTech',stage:'MVP in Progress',founder:'Ankit Verma',location:'Delhi',mrr:'Rs.0 (pre-launch)',team:'Solo founder',
+   tagline:'Adaptive test infrastructure for coaching institutes and corporate L&D',
+   pitch:'White-label SaaS platform that coaching institutes plug into their curriculum for AI-adaptive online testing. Same platform being extended to corporate L&D certification. Two very different segments, one solo founder building both.',
+   workDone:'Core test platform in development. Early conversations with 3 Delhi coaching institutes.',
+   roadmap:'Complete platform, pilot institutes, first revenue, then build corporate module.',
+   quote:'"Institutes spend Rs.5L a year dealing with question paper leaks. I can make that problem disappear."',
+   signals:['Two target segments splitting founder focus','Institute demand confirmed verbally','Corporate module not yet built']},
+  {id:'trailmate',name:'TrailMate',sector:'Travel & Adventure',stage:'MVP Live',founder:'Neel Kapoor',location:'Bangalore',mrr:'Rs.18,000/month',team:'Solo founder',
+   tagline:'Book curated outdoor adventures in one tap',
+   pitch:'Two-sided marketplace connecting outdoor enthusiasts with vetted adventure operators. App is live with 40+ experiences listed across Bangalore, Coorg, and Rishikesh. Neel is generating real bookings and iterating on user feedback.',
+   workDone:'App live. 40+ experiences listed. Real revenue at Rs.18K MRR. Day-7 retention at 38% vs benchmark of 20%.',
+   roadmap:'Incorporate as Pvt. Ltd. Raise seed. Expand to 5 cities. Launch guide certification programme.',
+   quote:'"My first hire will not be a developer. The product works. My first hire will be a community manager."',
+   signals:['Only startup here with live revenue','Still a sole proprietorship','Funded competitor just entered same cities']},
+  {id:'campuskeep',name:'CampusKeep',sector:'E-Commerce',stage:'Concept',founder:'Simran Ahuja',location:'Delhi',mrr:'Rs.0 (concept)',team:'Solo founder',
+   tagline:'Official licensed merchandise for India\'s top B-schools',
+   pitch:'A licensed merchandise and memorabilia brand for premium B-schools. Franchise model where each institution gets a custom branded store with campus-specific products. Captive buyers: current students, alumni, parents. Near-zero customer acquisition cost.',
+   workDone:'Business plan developed. One B-school in advanced licensing discussions. No inventory procured yet.',
+   roadmap:'Sign licensing deal, procure inventory, launch first store (online + kiosk), then franchise to 20 institutions.',
+   quote:'"Rs.2 Cr of unofficial B-school merchandise is sold on Amazon every year by random sellers. None of it is licensed. That is the gap."',
+   signals:['Captive market with near-zero CAC','Licensing approval is the single make-or-break dependency','Inventory model not yet worked out']},
+  {id:'neuroleap',name:'NeuroLeap',sector:'EdTech / HealthTech',stage:'Concept',founder:'Leena Joseph & Rajeev Pillai',location:'Kochi',mrr:'Rs.0 (concept)',team:'2 co-founders (educator + AI engineer)',
+   tagline:'AI-powered early detection and support for children with learning differences',
+   pitch:'Platform that detects learning differences (Dyslexia, Dyscalculia, ADHD, APD) early and builds personalised intervention plans for children, parents, teachers, and therapists. Social impact is core but B2B school partnerships make it commercially viable.',
+   workDone:'Research and conceptualisation complete. Clinical psychologist advisory board being formed.',
+   roadmap:'Build detection module, clinical validation, pilot with 5 schools, then scale B2B channel.',
+   quote:'"Most dyslexic children are labelled slow before they are ever diagnosed. By age 12 it is often too late for early intervention."',
+   signals:['Clinical validation non-negotiable before any school will adopt','Child data under DPDP Act 2023','B2B school channel is right GTM']},
+];
+
+const EXPENSES = [
+  {id:'dig_ads',domain:'Marketing',label:'Digital advertising',desc:'Google, Meta, Instagram performance campaigns targeting core users',cost:'Rs.2L/month'},
+  {id:'brand_id',domain:'Marketing',label:'Brand identity & design',desc:'Logo, visual identity, brand guidelines, pitch deck design',cost:'Rs.3L one-time'},
+  {id:'influencer',domain:'Marketing',label:'Influencer & creator partnerships',desc:'Micro-influencers and content creators in the target niche',cost:'Rs.5L/campaign'},
+  {id:'pr_media',domain:'Marketing',label:'PR & media outreach',desc:'Press releases, journalist relationships, startup media coverage',cost:'Rs.4L/quarter'},
+  {id:'events_conf',domain:'Marketing',label:'Trade fairs & demo events',desc:'Exhibition stalls, industry conferences, product demos',cost:'Rs.3L/event'},
+  {id:'sales_hire',domain:'Sales',label:'Field sales team (2 hires)',desc:'B2B sales executives with monthly targets and incentive structure',cost:'Rs.8L/year each'},
+  {id:'crm_tools',domain:'Sales',label:'CRM & sales automation',desc:'HubSpot or Salesforce licence, setup, and pipeline training',cost:'Rs.2L/year'},
+  {id:'free_pilots',domain:'Sales',label:'Free or subsidised pilot programme',desc:'Offer first 10 customers zero-cost pilots to accelerate adoption',cost:'Rs.5L total'},
+  {id:'channel_partner',domain:'Sales',label:'Channel partner programme',desc:'Distributor or reseller agreements, partner margins and training',cost:'Rs.4L'},
+  {id:'cust_success',domain:'Sales',label:'Customer success function',desc:'Dedicated post-sale account manager for retention and upsell',cost:'Rs.7L/year'},
+  {id:'ca_compliance',domain:'Finance',label:'CA firm & statutory compliance',desc:'GST, ROC, MCA filings, annual audit, regulatory compliance',cost:'Rs.2L/year'},
+  {id:'ip_patent',domain:'Finance',label:'IP filing & patent application',desc:'Trademark registration and provisional patent on core technology',cost:'Rs.3L'},
+  {id:'legal_counsel',domain:'Finance',label:'Legal counsel & contracts',desc:'Founder agreements, customer contracts, ToS, privacy policy',cost:'Rs.2L'},
+  {id:'wc_buffer',domain:'Finance',label:'Working capital reserve',desc:'3-month cash runway buffer against delayed payments or pivots',cost:'Rs.10L'},
+  {id:'biz_insurance',domain:'Finance',label:'Business insurance',desc:'D&O liability, product liability, and cyber risk insurance',cost:'Rs.1L/year'},
+  {id:'office_rent',domain:'Operations',label:'Office space & rent',desc:'Co-working desk or dedicated office for the founding team',cost:'Rs.2L/month'},
+  {id:'equipment',domain:'Operations',label:'Equipment & hardware',desc:'Laptops, servers, testing rigs, lab and manufacturing equipment',cost:'Rs.5L'},
+  {id:'cloud_infra',domain:'Operations',label:'Cloud & IT infrastructure',desc:'AWS or GCP hosting, DevOps pipeline, CI/CD, cybersecurity',cost:'Rs.3L/year'},
+  {id:'logistics_scm',domain:'Operations',label:'Logistics & supply chain',desc:'Shipping partnerships, warehousing, 3PL for physical goods',cost:'Rs.4L'},
+  {id:'qa_testing',domain:'Operations',label:'QA, testing & compliance lab',desc:'QA engineers, test environments, regulatory compliance testing',cost:'Rs.3L'},
+  {id:'tech_hire',domain:'HR',label:'Senior technical hire (CTO or dev lead)',desc:'First critical engineering or domain expert hire beyond founders',cost:'Rs.15L/year CTC'},
+  {id:'founder_salary',domain:'HR',label:'Founder salaries',desc:'Minimum monthly draw for founders to sustain full-time commitment',cost:'Rs.6L/year each'},
+  {id:'esop_pool',domain:'HR',label:'ESOP pool creation',desc:'Reserve 10% equity for future key hires (no cash outflow)',cost:'Rs.0 cash'},
+  {id:'recruitment',domain:'HR',label:'Recruitment tools & agency fees',desc:'Naukri or LinkedIn premium, placement agency for key hires',cost:'Rs.2L'},
+  {id:'training',domain:'HR',label:'Team training & certifications',desc:'Domain certifications, upskilling workshops, technical courses',cost:'Rs.1L'},
+  {id:'espresso',domain:"Founder's Perks",label:'Premium espresso machine',desc:'Because great startups run on great coffee',cost:'Rs.0.5L'},
+  {id:'ping_pong',domain:"Founder's Perks",label:'Office ping pong table',desc:'Culture, morale, and distraction all in one purchase',cost:'Rs.0.3L'},
+  {id:'team_offsite',domain:"Founder's Perks",label:'Team offsite retreat',desc:'3-day Goa or Coorg bonding trip for the founding team',cost:'Rs.1.5L'},
+  {id:'branded_swag',domain:"Founder's Perks",label:'Branded team merchandise',desc:'Hoodies, mugs, stickers. Every startup needs swag.',cost:'Rs.0.5L'},
+  {id:'ergo_chairs',domain:"Founder's Perks",label:'Ergonomic chairs & standing desks',desc:'Invest in the founders spines for the long haul',cost:'Rs.1L'},
+];
+
+const DOMAINS = ['Marketing','Sales','Finance','Operations','HR',"Founder's Perks"];
+
+const DIAGNOSTICS = {
+  tradetab:[
+    {q:'What is TradeTab\'s most critical gap right now?',opts:['No technical co-founder to build the product','Market research is insufficient','Too many regulatory barriers','The market is too small']},
+    {q:'Who is TradeTab\'s primary paying customer?',opts:['Banks and NBFCs wanting credit data','Kirana and small shop owners','End consumers buying on credit','B2B aggregators and SaaS resellers']},
+    {q:'What should TradeTab focus on in the next 90 days?',opts:['Launch a national marketing campaign','Build the MVP and test with real shops','Hire a large sales team','Approach VCs for Series A funding']},
+  ],
+  medilingo:[
+    {q:'What is the mandatory step before MediLingo can legally sell anything in India?',opts:['FSSAI food safety approval','CDSCO Class B medical device certification','RBI fintech licence','No regulation needed for AI tools']},
+    {q:'Who is MediLingo\'s primary buyer?',opts:['Individual patients directly','State government health departments and hospitals','Medical colleges for training','General consumers via app store']},
+    {q:'What is MediLingo\'s most urgent technical challenge?',opts:['Device battery life in rural areas','Translation accuracy across dialects especially less-documented languages','Hardware miniaturisation','Mobile app UX design']},
+  ],
+  quizforge:[
+    {q:'QuizForge is pursuing institutes and corporates simultaneously. What is the core risk?',opts:['Both segments will reject the product','Founder attention and product focus will be diluted','Corporate market will copy the product','Institute market is too competitive']},
+    {q:'Which segment should QuizForge prioritise first?',opts:['Coaching institutes: faster to close, clearer pain point','Corporate L&D: larger deal sizes and stickier contracts','Both simultaneously for more data','Government contracts for stable revenue']},
+    {q:'What is QuizForge\'s clearest technical differentiator?',opts:['Lower price than existing platforms','AI-adaptive questioning adjusting to student performance','Offline-first design for low-connectivity areas','Vernacular language interface']},
+  ],
+  trailmate:[
+    {q:'TrailMate has live revenue and strong retention. What is its single biggest risk?',opts:['Product quality is not good enough','A VC-funded competitor is entering same cities with deeper pockets','The outdoor adventure market is too seasonal','Founder has no technical background']},
+    {q:'TrailMate is a sole proprietorship. Why does this matter for investors?',opts:['Sole props cannot open a bank account','Investors cannot hold equity in a sole prop so legal structure must change before any funding','Sole props pay significantly higher taxes','There is no practical difference at this stage']},
+    {q:'Given the competitive threat, what should TrailMate prioritise?',opts:['Rebuild the app with new features','City expansion and community marketing before the competitor gains ground','Guide certification to improve supply quality','Hire a CFO to manage financials']},
+  ],
+  campuskeep:[
+    {q:'CampusKeep\'s core competitive advantage over Amazon sellers is:',opts:['Lower prices on all products','Official licensed merchandise with authentic college branding no one else can offer','Better website and social media','Faster delivery turnaround']},
+    {q:'What is CampusKeep\'s single most important dependency for launch?',opts:['Building a great e-commerce website','Securing campus licensing agreements from the institution','Raising VC funding','Getting 10,000 social media followers']},
+    {q:'CampusKeep\'s business model is closest to:',opts:['D2C e-commerce brand','Franchise and licensing model like a college bookstore chain','Subscription merchandise box','B2B wholesale distributor']},
+  ],
+  neuroleap:[
+    {q:'Why is clinical validation non-negotiable for NeuroLeap before school deployment?',opts:['SEBI and RBI require it for edtech funding','Schools and parents will not adopt an AI tool diagnosing children without clinical evidence','The technology will not work without validation','Only government schools require it']},
+    {q:'What is NeuroLeap\'s most viable go-to-market channel?',opts:['Direct B2C: parents download the app from the App Store','B2B: partnerships with schools and special education platforms','Government tender for public schools','Hospital pediatric departments as first buyer']},
+    {q:'Child learning data collected by NeuroLeap in India falls primarily under:',opts:['IT Act 2000','DPDP Act 2023: Digital Personal Data Protection Act','COPPA from USA which is not applicable in India','No regulation yet covers children learning data']},
+  ],
+};
+
+const EVENTS = {
+  tradetab:{badge:'Competitive shock',body:'KhaataBook, a Bangalore FinTech with Rs.25 Cr Series A, just launched a credit-tracking product for kirana shop owners in Pune and Mumbai. They are running free agent-assisted onboarding, visiting shops door to door.',implication:'TradeTab has no product yet. The same customers Aryan interviewed are now being onboarded by a well-funded competitor.'},
+  medilingo:{badge:'Regulatory fast-track',body:'The Union Health Ministry has announced a fast-track pilot certification programme for AI medical devices targeting rural primary care. The process is 40% faster than standard CDSCO but requires a working prototype submitted by end of Q3.',implication:'A genuine regulatory shortcut just opened. The question is whether the prototype will be ready in time.'},
+  quizforge:{badge:'Revenue signal',body:'Two Delhi coaching institutes have sent formal expressions of interest in a paid pilot worth Rs.1.5L combined. They need one specific feature: branching question logic based on live student performance. It is not on the current roadmap.',implication:'Real revenue is within reach. QuizForge must decide whether to build what customers want or continue with its original plan.'},
+  trailmate:{badge:'Competitor escalation',body:'Summit Adventures, the VC-backed rival, has launched in Bangalore and Rishikesh with a Rs.500 discount coupon campaign. TrailMate\'s weekly booking numbers dropped 18% in the last two weeks.',implication:'TrailMate has stronger retention data but lower capital. This is a loyalty vs money battle.'},
+  campuskeep:{badge:'Licensing breakthrough',body:'A top-5 business school has agreed to enter exclusive licensing discussions. They want 10% royalty on sales and a physical kiosk in their main lobby. Decision expected in 30 days. They want proof of inventory capability.',implication:'CampusKeep\'s entire thesis just became real but the timeline is tight and inventory has not been sourced yet.'},
+  neuroleap:{badge:'Enterprise signal',body:'A chain of 12 private schools expressed interest in piloting NeuroLeap\'s early detection module across 400 students. They will pay Rs.800 per student assessment if a clinical validation report exists.',implication:'Rs.3.2L in immediate revenue is on the table and a clinical validation path comes with it.'},
+};
+
+const CRISES = {
+  tradetab:{title:'The copycat',body:'KhaataBook\'s onboarding agents have personally signed up 3 shop owners who told Aryan during his research that they would use TradeTab first. A fourth has asked for a feature comparison before deciding. TradeTab still has no working product.'},
+  medilingo:{title:'Prototype setback',body:'Independent accuracy testing of MediLingo\'s language model shows failure in 3 of 12 languages including Odia and Bhojpuri. The fix requires retraining with 10x more data. Estimated additional cost: Rs.18L. Current personal runway: Rs.6L.'},
+  quizforge:{title:'Consulting distraction',body:'A corporate training firm offers Ankit Rs.8L as a consulting contract to build their internal assessment tool, completely unrelated to coaching institutes. Accepting means pausing QuizForge development for a minimum of 3 months.'},
+  trailmate:{title:'Acquisition offer',body:'Summit Adventures has privately approached Neel with an offer to acquire TrailMate for Rs.2 Cr at 65% stake. The offer expires in 5 days. Neel has Rs.22,000 in personal runway left and has not yet incorporated the company.'},
+  campuskeep:{title:'Unofficial seller emerges',body:'An Etsy seller has started listing near-identical B-school branded merchandise at 50% lower prices with faster delivery and is now ranking above CampusKeep in search results. They use unofficial designs and claim no institutional affiliation.'},
+  neuroleap:{title:'Compliance notice',body:'A parent group has filed a complaint with the DPDP authority alleging NeuroLeap\'s school pilot collected children\'s cognitive assessment data without explicit parental consent forms meeting the new standard. A formal response is required within 14 days or the pilot must halt.'},
+};
+
+let S = {
+  screen:'home', user:null, savedId:null, detailIdx:0,
+  topAlloc:{}, diagnostics:{}, expenses:{}, r2adj:{}, crisisCall:{},
+};
+let CTX = {sid:null, alloc:0};
+const funded = () => STARTUPS.filter(s=>(S.topAlloc[s.id]||0)>0);
+
+async function save(phase) {
+  try {
+    const p = {name:S.user?.name,roll:S.user?.roll,section:S.user?.section,
+      top_alloc:S.topAlloc,diagnostics:S.diagnostics,expenses:S.expenses,
+      r2adj:S.r2adj,crisis_call:S.crisisCall,phase_completed:phase};
+    if(S.savedId){ await db.from('submissions').update(p).eq('id',S.savedId); }
+    else { const {data}=await db.from('submissions').insert(p).select(); if(data&&data[0]&&data[0].id)S.savedId=data[0].id; }
+  } catch(e){console.error('Save error:',e);}
+}
+
+function go(screen){S.screen=screen;render();}
+window.go=go;
+
+function drawHome(){
+  app().innerHTML='<div style="text-align:center;padding:2.5rem 0">'+
+  '<div style="font-size:11px;font-weight:700;letter-spacing:.12em;color:#4F46E5;text-transform:uppercase;margin-bottom:.5rem">NEXORA x XCEED - XLRI Jamshedpur</div>'+
+  '<h1 style="margin-bottom:.25rem">Startup Investment Simulation</h1>'+
+  '<p style="margin:.25rem auto 1.5rem;max-width:380px">3 rounds - 6 startups - Rs.10 Crore - a test of how you think, not just what you know</p>'+
+  '<div class="card" style="max-width:480px;margin:0 auto 1.25rem;text-align:left">'+
+  '<div class="g3" style="margin-bottom:.75rem">'+
+  '<div style="background:#F9F9F8;border-radius:7px;padding:8px;font-size:11px;color:#555;text-align:center">Round 1 - Read & allocate</div>'+
+  '<div style="background:#F9F9F8;border-radius:7px;padding:8px;font-size:11px;color:#555;text-align:center">Round 2 - Markets react</div>'+
+  '<div style="background:#F9F9F8;border-radius:7px;padding:8px;font-size:11px;color:#555;text-align:center">Round 3 - Crisis calls</div>'+
+  '</div>'+
+  '<p>You will allocate Rs.10 Cr across 6 startups, choose specific expenses from a menu spanning Marketing, Sales, Finance, Operations, HR, and more. Then market events drop. Then crises hit. The panel reads your thinking, not just your outcome.</p>'+
+  '</div>'+
+  '<button class="btn btn-p" style="padding:11px 32px;font-size:14px" onclick="go(\'register\')">Enter as candidate</button>'+
+  '<br><br><button class="btn btn-g" style="font-size:12px" onclick="go(\'adminlogin\')">Admin panel</button>'+
+  '</div>';
+}
+
+function drawRegister(){
+  app().innerHTML='<div style="max-width:400px;margin:2rem auto">'+
+  '<span class="badge b-blue" style="margin-bottom:.75rem">Step 1 of 4</span>'+
+  '<h1 style="margin-bottom:1rem">Register</h1>'+
+  '<div class="card">'+
+  '<div style="display:flex;flex-direction:column;gap:14px">'+
+  '<div><label>Full name</label><input type="text" id="rn" placeholder="As per XLRI records"></div>'+
+  '<div><label>Roll number</label><input type="text" id="rr" placeholder="e.g. B25182"></div>'+
+  '<div><label>Section</label><select id="rs"><option>A</option><option>B</option><option>C</option><option selected>D</option><option>E</option></select></div>'+
+  '<button class="btn btn-p btn-w" onclick="doRegister()">Begin simulation</button>'+
+  '</div></div></div>';
+}
+window.doRegister=function(){
+  var n=$('rn').value.trim(),r=$('rr').value.trim(),s=$('rs').value;
+  if(n.length<2||r.length<3){alert('Please fill in all fields.');return;}
+  S.user={name:n,roll:r,section:s}; go('brief');
+};
+
+function drawBrief(){
+  var html='<span class="badge b-blue" style="margin-bottom:.75rem">Step 2 of 4 - Read the cohort</span>'+
+  '<h1 style="margin-bottom:.25rem">Meet the 6 Startups</h1>'+
+  '<p style="margin-bottom:1rem">Read all startups before allocating. Click each to expand the full brief.</p>';
+  STARTUPS.forEach(function(s){
+    html+='<div class="card" style="cursor:pointer" onclick="toggleBrief(\''+s.id+'\')">'+
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:3px">'+
+    '<span style="font-size:15px;font-weight:700">'+s.name+'</span>'+
+    '<span class="badge b-blue">'+s.sector+'</span>'+
+    '<span class="badge '+(s.mrr.indexOf('month')>-1?'b-green':'b-amber')+'">'+s.stage+'</span>'+
+    '<span style="margin-left:auto;color:#aaa;font-size:18px" id="arr-'+s.id+'">+</span></div>'+
+    '<p style="margin:0">'+s.tagline+'</p>'+
+    '<div id="det-'+s.id+'" style="display:none;margin-top:.75rem;padding-top:.75rem;border-top:1px solid #E5E5E3">'+
+    '<div class="g2" style="margin-bottom:.75rem">'+
+    '<div><label>Founder</label><p>'+s.founder+'</p></div>'+
+    '<div><label>Location</label><p>'+s.location+'</p></div>'+
+    '<div><label>Team</label><p>'+s.team+'</p></div>'+
+    '<div><label>MRR</label><p>'+s.mrr+'</p></div>'+
+    '</div>'+
+    '<p style="margin-bottom:.75rem">'+s.pitch+'</p>'+
+    '<div class="g2" style="margin-bottom:.75rem">'+
+    '<div><label>Work done</label><p>'+s.workDone+'</p></div>'+
+    '<div><label>Roadmap</label><p>'+s.roadmap+'</p></div>'+
+    '</div>'+
+    '<div class="ibox" style="border-left:3px solid #4F46E5;font-style:italic">'+s.quote+'</div>'+
+    '<div>'+s.signals.map(function(sig){return'<span class="tag">'+sig+'</span>';}).join('')+'</div>'+
+    '</div></div>';
+  });
+  html+='<button class="btn btn-p btn-w" onclick="go(\'r1alloc\')">I have read all briefs - Allocate budget</button>';
+  app().innerHTML=html;
+}
+window.toggleBrief=function(id){
+  var det=$('det-'+id),arr=$('arr-'+id);
+  if(det.style.display==='none'){det.style.display='block';arr.textContent='-';}
+  else{det.style.display='none';arr.textContent='+';}
+};
+
+function drawR1Alloc(){
+  var total=Object.values(S.topAlloc).reduce(function(a,b){return a+b;},0);
+  var rem=BUDGET-total,over=rem<0,pct=Math.min(100,total/BUDGET*100);
+  var html='<span class="badge b-blue" style="margin-bottom:.75rem">Round 1 - Step 1 - Budget distribution</span>'+
+  '<h1 style="margin-bottom:.25rem">Distribute Rs.10 Crore</h1>'+
+  '<p style="margin-bottom:1rem">Decide how much each startup gets. Enter amounts in <b>Lakhs</b>. You can give Rs.0 to any startup - that is a valid call.</p>'+
+  '<div class="card" style="margin-bottom:1rem">'+
+  '<div style="display:flex;justify-content:space-between;margin-bottom:5px">'+
+  '<span class="muted">Allocated</span>'+
+  '<span style="font-size:13px;font-weight:700;color:'+(over?'#DC2626':rem===0?'#059669':'#4F46E5')+'">'+fmt(total)+' / Rs.10.00 Cr</span>'+
+  '</div>'+
+  '<div class="bb"><div class="bf '+(over?'over':rem===0?'full':'')+'" id="top-bar" style="width:'+pct+'%"></div></div>'+
+  '<div style="display:flex;justify-content:space-between;margin-top:4px">'+
+  '<span class="muted">'+funded().length+' startup'+(funded().length!==1?'s':'')+' funded</span>'+
+  '<span class="muted">'+fmt(Math.abs(rem))+' '+(over?'over budget':'remaining')+'</span>'+
+  '</div></div>'+
+  '<div id="arows" style="display:flex;flex-direction:column;gap:7px;margin-bottom:1rem"></div>'+
+  '<div class="ibox">Enter amounts in Lakhs. Type 50 for Rs.50L, 200 for Rs.2 Cr. For each startup you fund, you will choose specific expenses from a detailed menu.</div>'+
+  '<button id="abtn" class="btn btn-p btn-w">Continue to expense planning</button>';
+  app().innerHTML=html;
+  buildAllocRows();
+  $('abtn').onclick=function(){S.detailIdx=0;go('r1detail');};
+}
+function buildAllocRows(){
+  $('arows').innerHTML='';
+  STARTUPS.forEach(function(s){
+    var v=(S.topAlloc[s.id]||0)/100000,has=v>0;
+    var row=document.createElement('div');row.className='card';
+    row.style.cssText='display:flex;align-items:center;gap:12px;padding:.7rem 1rem;border-color:'+(has?'#4F46E5':'#E5E5E3');
+    row.innerHTML='<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">'+s.name+'</div><div class="muted">'+s.sector+' - '+s.stage+'</div></div>'+
+    '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0"><span class="muted">Rs.</span>'+
+    '<input type="number" min="0" step="1" placeholder="0" value="'+(v||'')+'" style="width:70px" data-sid="'+s.id+'">'+
+    '<span class="muted" style="font-size:11px">L</span></div>'+
+    (has?'<span style="font-size:12px;font-weight:700;color:#4F46E5;min-width:56px;text-align:right">'+fmt(S.topAlloc[s.id])+'</span>':'');
+    row.querySelector('input').addEventListener('input',function(e){
+      var sid=e.target.getAttribute('data-sid');
+      S.topAlloc[sid]=Math.round(Math.max(0,parseFloat(e.target.value)||0)*100000);
+      rebuildAllocSummary();
+    });
+    $('arows').appendChild(row);
+  });
+  rebuildAllocSummary();
+}
+function rebuildAllocSummary(){
+  var t=Object.values(S.topAlloc).reduce(function(a,b){return a+b;},0);
+  var o=t>BUDGET;
+  var bar=$('top-bar');
+  if(bar){bar.style.width=Math.min(100,t/BUDGET*100)+'%';bar.className='bf '+(o?'over':t===BUDGET?'full':'');}
+  var b=$('abtn');
+  if(b){b.disabled=o||funded().length===0;b.textContent=o?'Over budget - adjust allocations':funded().length===0?'Fund at least one startup to continue':'Continue to expense planning';}
+}
+
+function drawR1Detail(){
+  var f=funded();
+  if(S.detailIdx>=f.length){save(1);go('r2events');return;}
+  var s=f[S.detailIdx];CTX={sid:s.id,alloc:S.topAlloc[s.id]};
+  var isLast=S.detailIdx===f.length-1;
+  var diags=S.diagnostics[s.id]||{};
+  var qs=DIAGNOSTICS[s.id];
+  var allDiags=qs.every(function(_,i){return diags['q'+i];});
+  var exps=S.expenses[s.id]||{};
+  var expSpent=Object.values(exps).reduce(function(a,b){return a+b;},0);
+  var over=expSpent>CTX.alloc,pct=Math.min(100,expSpent/CTX.alloc*100);
+
+  var html='<div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem">'+
+  '<button class="btn btn-g" style="padding:6px 12px;font-size:12px" onclick="S.detailIdx=Math.max(0,S.detailIdx-1);go(\'r1detail\')">Back</button>'+
+  '<span class="badge b-blue">Startup '+(S.detailIdx+1)+' of '+f.length+'</span>'+
+  '<span style="margin-left:auto;font-size:13px;font-weight:700;color:#4F46E5">'+s.name+' - '+fmt(CTX.alloc)+'</span></div>'+
+  '<div class="card card-hi" style="margin-bottom:1rem">'+
+  '<h2 style="margin-bottom:4px">'+s.name+' <span class="badge b-blue">'+s.sector+'</span></h2>'+
+  '<p style="margin-bottom:.5rem">'+s.pitch+'</p>'+
+  '<div class="ibox" style="border-left:3px solid #4F46E5;font-style:italic;margin:0">'+s.quote+'</div></div>'+
+  '<div class="card" style="margin-bottom:1rem">'+
+  '<h2 style="margin-bottom:.5rem">Three questions before you allocate</h2>'+
+  '<p style="margin-bottom:1rem">Your answers will be compared to your spending decisions by the panel.</p>';
+  qs.forEach(function(q,i){
+    html+='<div style="margin-bottom:1rem"><label>'+(i+1)+'. '+q.q+'</label>'+
+    '<select onchange="setDiag(\''+s.id+'\',\'q'+i+'\',this.value)">'+
+    '<option value="">Select your answer</option>'+
+    q.opts.map(function(o){return'<option'+(diags['q'+i]===o?' selected':'')+'>'+o+'</option>';}).join('')+
+    '</select></div>';
+  });
+  html+='</div>';
+
+  if(allDiags){
+    html+='<div class="card" style="margin-bottom:1rem">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">'+
+    '<h2>Expense planning</h2>'+
+    '<span style="font-size:13px;font-weight:700;color:'+(over?'#DC2626':expSpent===CTX.alloc?'#059669':'#4F46E5')+'">'+fmt(expSpent)+' / '+fmt(CTX.alloc)+'</span>'+
+    '</div>'+
+    '<div class="bb"><div class="bf '+(over?'over':expSpent===CTX.alloc?'full':'')+'" id="ebar" style="width:'+pct+'%"></div></div>'+
+    '<div style="display:flex;justify-content:space-between;margin-bottom:.75rem;margin-top:4px">'+
+    '<span class="muted">Enter 0 to skip an expense. Amounts in Lakhs.</span>'+
+    '<span class="muted" id="eleft">'+fmt(Math.abs(CTX.alloc-expSpent))+' '+(over?'over':'remaining')+'</span></div>'+
+    '<div id="egrid">'+buildExpGrid(s.id)+'</div></div>'+
+    '<button id="dbtn" class="btn btn-p btn-w" onclick="nextDetail()">'+(isLast?'Submit Round 1':'Next startup')+'</button>';
+  } else {
+    html+='<div class="ibox" style="text-align:center;color:#888">Answer all 3 questions above to unlock expense planning</div>';
+  }
+  app().innerHTML=html;
+  if(allDiags) updateDetBtn(isLast,CTX.alloc,expSpent,over);
+}
+
+function buildExpGrid(sid){
+  var exps=S.expenses[sid]||{};
+  var html='';
+  DOMAINS.forEach(function(domain){
+    var items=EXPENSES.filter(function(e){return e.domain===domain;});
+    html+='<div class="domain-hd">'+domain+'</div>';
+    items.forEach(function(e){
+      var v=exps[e.id]?exps[e.id]/100000:'';
+      html+='<div class="exp-row">'+
+      '<div style="flex:1;min-width:0">'+
+      '<div class="exp-lbl">'+e.label+'</div>'+
+      '<div class="exp-desc">'+e.desc+'</div>'+
+      '<div class="exp-cost">Typical cost: '+e.cost+'</div></div>'+
+      '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">'+
+      '<input type="number" min="0" step=".5" placeholder="0" value="'+(v||'')+'" data-eid="'+e.id+'" onchange="updExp(this.getAttribute(\'data-eid\'),this.value)">'+
+      '<span class="muted" style="font-size:11px">L</span></div></div>';
+    });
+  });
+  return html;
+}
+
+window.setDiag=function(sid,key,val){
+  if(!S.diagnostics[sid])S.diagnostics[sid]={};
+  S.diagnostics[sid][key]=val;
+  drawR1Detail();
+};
+window.updExp=function(eid,v){
+  var sid=CTX.sid,alloc=CTX.alloc;
+  if(!S.expenses[sid])S.expenses[sid]={};
+  var val=Math.round(Math.max(0,parseFloat(v)||0)*100000);
+  if(val===0)delete S.expenses[sid][eid]; else S.expenses[sid][eid]=val;
+  var spent=Object.values(S.expenses[sid]).reduce(function(a,b){return a+b;},0);
+  var over=spent>alloc,pct=Math.min(100,spent/alloc*100);
+  var bar=$('ebar');if(bar){bar.style.width=pct+'%';bar.className='bf '+(over?'over':spent===alloc?'full':'');}
+  var lbl=$('eleft');if(lbl){lbl.textContent=fmt(Math.abs(alloc-spent))+(over?' over':' remaining');lbl.style.color=over?'#DC2626':'';}
+  updateDetBtn(S.detailIdx===funded().length-1,alloc,spent,over);
+};
+function updateDetBtn(isLast,alloc,spent,over){
+  var b=$('dbtn');if(!b)return;
+  var ok=!over&&spent>0;
+  b.disabled=!ok;
+  b.textContent=over?'Over budget - adjust':spent===0?'Allocate to at least one expense':isLast?'Submit Round 1':'Next startup';
+}
+window.nextDetail=function(){
+  if(S.detailIdx<funded().length-1){S.detailIdx++;go('r1detail');}
+  else{save(1);go('r2events');}
+};
+
+function drawR2Events(){
+  var html='<span class="badge b-red" style="margin-bottom:.75rem">Round 2 - Market Events</span>'+
+  '<h1 style="margin-bottom:.25rem">What Just Happened</h1>'+
+  '<p style="margin-bottom:1.25rem">Six developments across your portfolio. These have happened. How you respond is what the panel evaluates.</p>';
+  funded().forEach(function(s){
+    var ev=EVENTS[s.id];
+    html+='<div class="card card-hi" style="margin-bottom:.75rem">'+
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:.5rem">'+
+    '<span style="font-size:15px;font-weight:700">'+s.name+'</span>'+
+    '<span class="badge b-red">'+ev.badge+'</span></div>'+
+    '<p style="margin-bottom:.5rem">'+ev.body+'</p>'+
+    '<div class="ibox"><b>Implication:</b> '+ev.implication+'</div></div>';
+  });
+  html+='<button class="btn btn-p btn-w" onclick="go(\'r2adjust\')">Proceed to rebalancing</button>';
+  app().innerHTML=html;
+}
+
+function drawR2Adjust(){
+  var html='<span class="badge b-blue" style="margin-bottom:.75rem">Round 2 - Rebalancing</span>'+
+  '<h1 style="margin-bottom:.25rem">Rebalance Your Portfolio</h1>'+
+  '<p style="margin-bottom:1rem">You can adjust each startup\'s allocation by up to <b>plus or minus 20%</b> of your original investment.</p>'+
+  '<div id="r2rows" style="display:flex;flex-direction:column;gap:8px;margin-bottom:1rem"></div>'+
+  '<button class="btn btn-p btn-w" onclick="save(2);go(\'r3crisis\')">Submit Round 2 and proceed to crisis calls</button>';
+  app().innerHTML=html;
+  funded().forEach(function(s){
+    var base=S.topAlloc[s.id];
+    var minV=Math.round(base*0.8),maxV=Math.round(base*1.2);
+    var cur=S.r2adj[s.id]!==undefined?S.r2adj[s.id]:base;
+    var ev=EVENTS[s.id];
+    var card=document.createElement('div');card.className='card';
+    card.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">'+
+    '<div><span style="font-size:14px;font-weight:700">'+s.name+'</span> <span class="muted">- '+ev.badge+'</span></div>'+
+    '<div style="text-align:right">'+
+    '<div id="r2a-'+s.id+'" style="font-size:14px;font-weight:700;color:'+(cur>base?'#059669':cur<base?'#DC2626':'#1a1a1a')+'">'+fmt(cur)+'</div>'+
+    '<div id="r2d-'+s.id+'" class="muted">'+(cur===base?'unchanged':((cur>base?'+':'')+fmt(cur-base)))+'</div>'+
+    '</div></div>'+
+    '<div style="display:flex;justify-content:space-between;font-size:10px;color:#aaa;margin-bottom:3px">'+
+    '<span>-20% ('+fmt(minV)+')</span><span>Original ('+fmt(base)+')</span><span>+20% ('+fmt(maxV)+')</span></div>'+
+    '<input type="range" min="'+minV+'" max="'+maxV+'" step="10000" value="'+cur+'" data-sid="'+s.id+'" onchange="updR2(this.getAttribute(\'data-sid\'),this.value)">';
+    $('r2rows').appendChild(card);
+  });
+}
+window.updR2=function(sid,val){
+  var v=Math.round(parseFloat(val));S.r2adj[sid]=v;
+  var base=S.topAlloc[sid];
+  var a=$('r2a-'+sid),d=$('r2d-'+sid);
+  if(a){a.textContent=fmt(v);a.style.color=v>base?'#059669':v<base?'#DC2626':'#1a1a1a';}
+  if(d){d.textContent=v===base?'unchanged':((v>base?'+':'')+fmt(v-base));}
+};
+
+function drawR3Crisis(){
+  var f=funded();var cidx=0;
+  function draw(){
+    var s=f[cidx],cr=CRISES[s.id];
+    var dec=S.crisisCall[s.id]||{call:'',reason:''};
+    var isLast=cidx===f.length-1;
+    var html='<span class="badge b-red" style="margin-bottom:.75rem">Round 3 - Crisis '+(cidx+1)+' of '+f.length+'</span>'+
+    '<h1 style="margin-bottom:.25rem">'+cr.title+'</h1>'+
+    '<div class="card card-hi" style="margin-bottom:1rem">'+
+    '<span class="badge b-blue" style="margin-bottom:.5rem">'+s.name+'</span>'+
+    '<p>'+cr.body+'</p></div>'+
+    '<div style="margin-bottom:1rem"><label>Your call</label>'+
+    '<div class="g3">'+
+    '<div class="crisis-opt'+(dec.call==='Pivot'?' sel':'')+'" onclick="setCall(\''+s.id+'\',\'Pivot\')">Pivot</div>'+
+    '<div class="crisis-opt'+(dec.call==='Double down'?' sel':'')+'" onclick="setCall(\''+s.id+'\',\'Double down\')">Double down</div>'+
+    '<div class="crisis-opt'+(dec.call==='Exit'?' sel':'')+'" onclick="setCall(\''+s.id+'\',\'Exit\')">Exit</div>'+
+    '</div></div>'+
+    '<div style="margin-bottom:1rem">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">'+
+    '<label style="margin:0">Your reasoning (40 words minimum)</label>'+
+    '<span class="muted" id="r3wc">'+wc(dec.reason)+' / 40</span></div>'+
+    '<textarea id="r3rat" rows="4" placeholder="Why this call? What are you prioritising? What trade-offs are you accepting?">'+( dec.reason||'')+'</textarea></div>'+
+    '<button id="r3btn" class="btn btn-p btn-w">'+(isLast?'Submit final simulation':'Next crisis')+'</button>';
+    app().innerHTML=html;
+    $('r3rat').oninput=function(e){
+      if(!S.crisisCall[s.id])S.crisisCall[s.id]={call:dec.call,reason:''};
+      S.crisisCall[s.id].reason=e.target.value;
+      var w=wc(e.target.value);
+      var wcel=$('r3wc');if(wcel){wcel.textContent=w+' / 40';wcel.style.color=w>=40?'#059669':'#888';}
+      updR3Btn();
+    };
+    function updR3Btn(){
+      var d=S.crisisCall[s.id]||{},w=wc(d.reason||'');
+      var b=$('r3btn');if(!b)return;
+      var ok=d.call&&w>=40;b.disabled=!ok;
+      b.textContent=!d.call?'Select a call first':w<40?(40-w)+' more words needed':isLast?'Submit final simulation':'Next crisis';
+    }
+    $('r3btn').onclick=function(){if(cidx<f.length-1){cidx++;draw();}else{save(3);go('done');}};
+    updR3Btn();
+  }
+  window.setCall=function(sid,call){
+    if(!S.crisisCall[sid])S.crisisCall[sid]={call:'',reason:''};
+    S.crisisCall[sid].call=call;draw();
+  };
+  draw();
+}
+
+function drawDone(){
+  app().innerHTML='<div style="text-align:center;padding:2.5rem 0">'+
+  '<div style="font-size:48px;margin-bottom:1rem">&#127919;</div>'+
+  '<h1>Simulation complete</h1>'+
+  '<p style="max-width:420px;margin:.75rem auto 1.5rem">Your portfolio, expense decisions, diagnostic answers, and crisis reasoning have been recorded. The NEXORA panel will review your thinking across all three rounds.</p>'+
+  '<div class="card" style="text-align:left;max-width:480px;margin:0 auto 1rem">'+
+  '<label>What the panel looks at</label>'+
+  '<ul style="font-size:13px;color:#555;line-height:1.9;padding-left:1.1rem">'+
+  '<li>How you split Rs.10 Cr and which startups you skipped</li>'+
+  '<li>Which expense domains you prioritised for each startup</li>'+
+  '<li>Whether your diagnostic answers matched your spending pattern</li>'+
+  '<li>How you reacted to market events</li>'+
+  '<li>The reasoning behind each crisis call</li>'+
+  '</ul></div>'+
+  '<p class="muted">You may close this window. Results will be communicated by the NEXORA team.</p></div>';
+}
+
+function drawAdminLogin(){
+  app().innerHTML='<div style="max-width:300px;margin:3rem auto;text-align:center">'+
+  '<h1 style="margin-bottom:1rem">Admin access</h1>'+
+  '<input type="password" id="apw" placeholder="Password" style="margin-bottom:6px">'+
+  '<div id="apwerr" style="color:#DC2626;font-size:11px;min-height:14px;margin-bottom:8px"></div>'+
+  '<button class="btn btn-p btn-w" onclick="chkAdmin()">Enter</button>'+
+  '<br><br><button class="btn btn-g" onclick="go(\'home\')">Back</button></div>';
+  $('apw').addEventListener('keydown',function(e){if(e.key==='Enter')window.chkAdmin();});
+}
+window.chkAdmin=function(){if($('apw').value==='NEXORA2025')go('admin');else $('apwerr').textContent='Incorrect password';};
+
+async function drawAdmin(){
+  app().innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">'+
+  '<h1>Admin Panel</h1>'+
+  '<button class="btn btn-g" onclick="go(\'home\')">Back</button></div>'+
+  '<p class="muted">Loading submissions...</p>';
+  try {
+    var result=await db.from('submissions').select('*').order('submitted_at',{ascending:false});
+    var data=result.data||[];
+    function domainBreakdown(expenses){
+      var totals={};
+      DOMAINS.forEach(function(d){totals[d]=0;});
+      STARTUPS.forEach(function(s){
+        var ex=(expenses&&expenses[s.id])||{};
+        Object.entries(ex).forEach(function(entry){
+          var eid=entry[0],amt=entry[1];
+          var exp=EXPENSES.find(function(e){return e.id===eid;});
+          if(exp)totals[exp.domain]=(totals[exp.domain]||0)+amt;
+        });
+      });
+      return totals;
+    }
+    var html='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">'+
+    '<h1>Admin Panel</h1><button class="btn btn-g" onclick="go(\'home\')">Back</button></div>'+
+    '<div class="card" style="margin-bottom:1rem"><div class="g3">'+
+    '<div><label>Total submissions</label><div style="font-size:22px;font-weight:700">'+data.length+'</div></div>'+
+    '<div><label>Round 1 complete</label><div style="font-size:22px;font-weight:700">'+data.filter(function(d){return d.phase_completed>=1;}).length+'</div></div>'+
+    '<div><label>All 3 rounds done</label><div style="font-size:22px;font-weight:700">'+data.filter(function(d){return d.phase_completed>=3;}).length+'</div></div>'+
+    '</div></div>';
+    if(data.length===0){html+='<div class="ibox">No submissions yet.</div>';}
+    else {
+      data.forEach(function(row){
+        var db2=domainBreakdown(row.expenses);
+        var totalExp=Object.values(db2).reduce(function(a,b){return a+b;},0);
+        html+='<div class="card" style="margin-bottom:.75rem">'+
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:.5rem">'+
+        '<b>'+row.name+'</b>'+
+        '<span class="badge b-blue">'+row.roll+'</span>'+
+        '<span class="badge b-amber">Sec '+row.section+'</span>'+
+        '<span style="margin-left:auto" class="badge '+(row.phase_completed>=3?'b-green':row.phase_completed>=2?'b-amber':'b-red')+'">Phase '+row.phase_completed+'/3</span>'+
+        '</div>'+
+        '<div style="margin-bottom:.5rem">'+
+        STARTUPS.map(function(s){var a=(row.top_alloc&&row.top_alloc[s.id])||0;return a>0?'<span class="tag"><b>'+s.name+'</b>: '+fmt(a)+'</span>':'';}).join('')+
+        '</div>'+
+        '<div style="margin-bottom:.75rem">'+
+        '<label style="margin-bottom:4px">Expense domain profile</label>'+
+        '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
+        DOMAINS.map(function(d){
+          var amt=db2[d]||0,pct2=totalExp>0?Math.round(amt/totalExp*100):0;
+          return pct2>0?'<div style="background:#EEF2FF;border-radius:6px;padding:4px 8px;font-size:11px"><b style="color:#4F46E5">'+d+'</b><br><span style="color:#555">'+pct2+'% ('+fmt(amt)+')</span></div>':'';
+        }).join('')+
+        '</div></div>'+
+        (row.crisis_call?'<div style="margin-bottom:.5rem">'+Object.entries(row.crisis_call).map(function(entry){var sid=entry[0],v=entry[1];var st=STARTUPS.find(function(x){return x.id===sid;});return'<span class="tag"><b>'+(st?st.name:sid)+':</b> '+v.call+'</span>';}).join('')+'</div>':'')+
+        '<details><summary style="font-size:12px;cursor:pointer;color:#4F46E5">Full detail view</summary>'+
+        '<div style="margin-top:.75rem;font-size:12px;line-height:1.7">'+
+        '<b>Diagnostic answers:</b><br>'+
+        STARTUPS.map(function(s){
+          var d2=(row.diagnostics&&row.diagnostics[s.id])||{};
+          var qs=DIAGNOSTICS[s.id];
+          if(!Object.keys(d2).length)return'';
+          return'<div style="margin:.4rem 0"><b>'+s.name+':</b> '+qs.map(function(q,i){return'['+q.q.substring(0,30)+'...] -> '+(d2['q'+i]||'?');}).join(' | ')+'</div>';
+        }).join('')+
+        '<br><b>Expenses breakdown:</b><br>'+
+        STARTUPS.map(function(s){
+          var ex=(row.expenses&&row.expenses[s.id])||{};
+          var items=Object.entries(ex).filter(function(e){return e[1]>0;});
+          if(!items.length)return'';
+          return'<div style="margin:.4rem 0"><b>'+s.name+':</b> '+items.map(function(e){var exp=EXPENSES.find(function(x){return x.id===e[0];});return(exp?exp.label:e[0])+' ('+fmt(e[1])+')';}).join(' - ')+'</div>';
+        }).join('')+
+        '<br><b>Crisis reasoning:</b><br>'+
+        Object.entries(row.crisis_call||{}).map(function(entry){var sid=entry[0],v=entry[1];var st=STARTUPS.find(function(x){return x.id===sid;});return'<div style="margin:.4rem 0"><b>'+(st?st.name:sid)+' - '+v.call+':</b> '+v.reason+'</div>';}).join('')+
+        '</div></details></div>';
+      });
+    }
+    app().innerHTML=html;
+  } catch(e){app().innerHTML+='<div class="ibox" style="color:#DC2626">Error loading data: '+e.message+'</div>';}
+}
+
+function render(){
+  var s=S.screen;
+  if(s==='home')drawHome();
+  else if(s==='register')drawRegister();
+  else if(s==='brief')drawBrief();
+  else if(s==='r1alloc')drawR1Alloc();
+  else if(s==='r1detail')drawR1Detail();
+  else if(s==='r2events')drawR2Events();
+  else if(s==='r2adjust')drawR2Adjust();
+  else if(s==='r3crisis')drawR3Crisis();
+  else if(s==='done')drawDone();
+  else if(s==='adminlogin')drawAdminLogin();
+  else if(s==='admin')drawAdmin();
+}
+render();
+</script>
+</body>
+</html>
