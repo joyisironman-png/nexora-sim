@@ -1,0 +1,680 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2685.5">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+    span.s1 {font: 12.0px 'Lucida Grande'}
+    span.s2 {font: 12.0px 'Hiragino Sans'}
+    span.s3 {font: 12.0px 'Apple Color Emoji'}
+  </style>
+</head>
+<body>
+<p class="p1">&lt;!DOCTYPE html&gt;</p>
+<p class="p1">&lt;html lang="en"&gt;</p>
+<p class="p1">&lt;head&gt;</p>
+<p class="p1">&lt;meta charset="UTF-8"&gt;</p>
+<p class="p1">&lt;meta name="viewport" content="width=device-width,initial-scale=1"&gt;</p>
+<p class="p1">&lt;title&gt;NEXORA — Startup Investment Simulation&lt;/title&gt;</p>
+<p class="p1">&lt;script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"&gt;&lt;/script&gt;</p>
+<p class="p1">&lt;style&gt;</p>
+<p class="p1">*{box-sizing:border-box;margin:0;padding:0}</p>
+<p class="p1">body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F8F8F7;color:#1a1a1a;font-size:14px}</p>
+<p class="p1">#app{max-width:760px;margin:0 auto;padding:1.5rem;min-height:100vh}</p>
+<p class="p1">h1{font-size:21px;font-weight:700;margin-bottom:6px}</p>
+<p class="p1">h2{font-size:16px;font-weight:700;margin-bottom:6px}</p>
+<p class="p1">p{line-height:1.65;color:#444;font-size:13px}</p>
+<p class="p1">.card{background:#fff;border:1px solid #E5E5E3;border-radius:10px;padding:1rem 1.25rem;margin-bottom:.75rem}</p>
+<p class="p1">.card-hi{border-left:3px solid #4F46E5}</p>
+<p class="p1">.btn{padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:opacity .15s;display:inline-block}</p>
+<p class="p1">.btn-p{background:#4F46E5;color:#fff}</p>
+<p class="p1">.btn-p:disabled{opacity:.35;cursor:not-allowed}</p>
+<p class="p1">.btn-g{background:transparent;border:1px solid #D1D1CF;color:#333}</p>
+<p class="p1">.btn-w{width:100%;display:block;text-align:center;margin-top:.75rem}</p>
+<p class="p1">.btn:hover:not(:disabled){opacity:.85}</p>
+<p class="p1">.badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;display:inline-block}</p>
+<p class="p1">.b-blue{background:#EEF2FF;color:#4F46E5}</p>
+<p class="p1">.b-green{background:#ECFDF5;color:#059669}</p>
+<p class="p1">.b-red{background:#FEF2F2;color:#DC2626}</p>
+<p class="p1">.b-amber{background:#FFFBEB;color:#D97706}</p>
+<p class="p1">label{font-size:11px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px}</p>
+<p class="p1">input[type=text],input[type=password],select,textarea{width:100%;background:#F9F9F8;border:1px solid #E5E5E3;border-radius:7px;padding:8px 10px;font-size:13px;color:#1a1a1a;outline:none;font-family:inherit}</p>
+<p class="p1">input[type=text]:focus,input[type=password]:focus,select:focus,textarea:focus{border-color:#4F46E5}</p>
+<p class="p1">input[type=number]{background:#F9F9F8;border:1px solid #E5E5E3;border-radius:6px;padding:5px 8px;font-size:13px;color:#1a1a1a;outline:none;width:70px;text-align:right}</p>
+<p class="p1">input[type=range]{width:100%;accent-color:#4F46E5}</p>
+<p class="p1">.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}</p>
+<p class="p1">.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}</p>
+<p class="p1">.row{display:flex;align-items:center;gap:10px}</p>
+<p class="p1">.tag{font-size:11px;background:#F3F4F6;color:#555;padding:2px 8px;border-radius:4px;display:inline-block;margin:2px}</p>
+<p class="p1">hr{border:none;border-top:1px solid #E5E5E3;margin:.75rem 0}</p>
+<p class="p1">.domain-hd{font-size:11px;font-weight:700;color:#4F46E5;text-transform:uppercase;letter-spacing:.08em;margin:1rem 0 .4rem;padding-bottom:4px;border-bottom:2px solid #EEF2FF}</p>
+<p class="p1">.exp-row{display:flex;align-items:flex-start;gap:10px;padding:.55rem 0;border-bottom:1px solid #F3F4F6}</p>
+<p class="p1">.exp-lbl{font-size:13px;font-weight:500;color:#1a1a1a}</p>
+<p class="p1">.exp-desc{font-size:11px;color:#888;margin-top:2px}</p>
+<p class="p1">.exp-cost{font-size:10px;color:#bbb;margin-top:1px}</p>
+<p class="p1">.bb{height:5px;background:#F0F0EE;border-radius:3px;overflow:hidden;margin:.4rem 0}</p>
+<p class="p1">.bf{height:100%;border-radius:3px;background:#4F46E5;transition:width .2s}</p>
+<p class="p1">.bf.over{background:#DC2626}</p>
+<p class="p1">.bf.full{background:#059669}</p>
+<p class="p1">.crisis-opt{padding:10px;border-radius:8px;border:1px solid #E5E5E3;cursor:pointer;font-size:13px;text-align:center;transition:all .15s;background:#F9F9F8}</p>
+<p class="p1">.crisis-opt.sel{border-color:#4F46E5;background:#EEF2FF;font-weight:700;color:#4F46E5}</p>
+<p class="p1">.ibox{background:#F9F9F8;border:1px solid #E5E5E3;border-radius:8px;padding:.75rem 1rem;font-size:13px;color:#555;line-height:1.6;margin-bottom:.75rem}</p>
+<p class="p1">.muted{color:#888;font-size:12px}</p>
+<p class="p1">.bold{font-weight:700}</p>
+<p class="p1">&lt;/style&gt;</p>
+<p class="p1">&lt;/head&gt;</p>
+<p class="p1">&lt;body&gt;</p>
+<p class="p1">&lt;div id="app"&gt;&lt;/div&gt;</p>
+<p class="p1">&lt;script&gt;</p>
+<p class="p1">/* ============================================================</p>
+<p class="p1"><span class="Apple-converted-space">   </span>CONFIG — paste your Supabase values here</p>
+<p class="p1">============================================================ */</p>
+<p class="p1">const SB_URL = 'https://wkrgdznbyfixsilwydob.supabase.co';</p>
+<p class="p1">const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indrcmdkem5ieWZpeHNpbHd5ZG9iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNTMwMTYsImV4cCI6MjEwMDcyOTAxNn0.qRa1hvVFwUQmjUMQwkU-0zT3EH0Fzmc6CLk_6H_fWgg';</p>
+<p class="p1">const db = supabase.createClient(SB_URL, SB_KEY);</p>
+<p class="p2"><br></p>
+<p class="p1">/* ============================================================</p>
+<p class="p1"><span class="Apple-converted-space">   </span>DATA</p>
+<p class="p1">============================================================ */</p>
+<p class="p1">const BUDGET = 100000000;</p>
+<p class="p1">const fmt = n =&gt; { if(!n)return'₹0'; if(n&gt;=10000000)return'₹'+(n/10000000).toFixed(2)+' Cr'; if(n&gt;=100000)return'₹'+Math.round(n/100000)+'L'; return'₹'+Math.round(n).toLocaleString('en-IN'); };</p>
+<p class="p1">const wc = s =&gt; s?s.trim().split(/\s+/).filter(Boolean).length:0;</p>
+<p class="p1">const $=id=&gt;document.getElementById(id);</p>
+<p class="p1">const app=()=&gt;$('app');</p>
+<p class="p2"><br></p>
+<p class="p1">const STARTUPS = [</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'tradetab',name:'TradeTab',sector:'FinTech',stage:'Pre-MVP',founder:'Aryan Mehta',location:'Pune',mrr:'₹0 (pre-product)',team:'Solo founder',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>tagline:'Credit and inventory management for 60 million small retailers',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>pitch:'Mobile app letting small retailers track customer credit, manage dues, and access embedded working capital. Aryan validated the problem with 80+ shop owner interviews in Pune. No product built yet — pure concept with strong demand signal.',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>workDone:'80+ customer discovery interviews done. UX wireframes in progress. No technical co-founder.',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>roadmap:'Build MVP <span class="s1">→</span> pilot with 100 shops <span class="s1">→</span> GTM. External funding not required at this stage.',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>quote:'"Shop owners are still using paper khata books in 2025. That\'s a ₹40,000 Cr opportunity sitting untouched."',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>signals:['Strong grassroots demand validated','No product exists yet','No technical co-founder']},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'medilingo',name:'MediLingo',sector:'HealthTech / AI',stage:'Early Prototype',founder:'Priya Nair &amp; Dev Sharma',location:'Hyderabad',mrr:'₹0 (pre-product)',team:'2 co-founders (doctor + engineer)',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>tagline:'AI wearable that breaks the language barrier between rural patients and doctors',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>pitch:'Clip-on AI wearable for rural doctors that translates 12 Indian regional languages in real time, processes patient symptoms, and suggests probable diagnoses. Designed for primary health centres where language is a life-or-death barrier.',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>workDone:'Early hardware prototype built. Language model in training. CDSCO certification not yet initiated.',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>roadmap:'Complete prototype <span class="s1">→</span> accuracy testing <span class="s1">→</span> CDSCO certification <span class="s1">→</span> pilot with 20 PHCs <span class="s1">→</span> manufacturing.',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>quote:'"The doctor and the patient spoke different languages. The patient left undiagnosed. That\'s what we\'re fixing."',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>signals:['Hardware = high capital requirement','CDSCO Class B certification mandatory','B2B model — hospitals, PHCs, state govt']},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'quizforge',name:'QuizForge',sector:'EdTech',stage:'MVP in Progress',founder:'Ankit Verma',location:'Delhi',mrr:'₹0 (pre-launch)',team:'Solo founder',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>tagline:'Adaptive test infrastructure for coaching institutes — and a corporate L&amp;D module',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>pitch:'White-label SaaS platform that coaching institutes plug into their curriculum for AI-adaptive online testing. Same platform being extended to corporate L&amp;D certification. Two very different segments, one solo founder building both.',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>workDone:'Core test platform in development. Early-stage conversations with 3 Delhi coaching institutes.',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>roadmap:'Complete platform <span class="s1">→</span> pilot institutes <span class="s1">→</span> first revenue <span class="s1">→</span> build corporate module.',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>quote:'"Institutes spend ₹5L a year dealing with question paper leaks. I can make that problem disappear."',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>signals:['Two target segments splitting founder focus','Institute demand confirmed verbally','Corporate module not yet built']},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'trailmate',name:'TrailMate',sector:'Travel &amp; Adventure',stage:'MVP Live <span class="s1">✓</span>',founder:'Neel Kapoor',location:'Bangalore',mrr:'₹18,000/month',team:'Solo founder (student-operator)',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>tagline:'Book curated outdoor adventures — hiking, cycling, camping, kayaking — in one tap',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>pitch:'Two-sided marketplace connecting outdoor enthusiasts with vetted adventure operators. App is live with 40+ experiences listed across Bangalore, Coorg, and Rishikesh. Neel is generating real bookings and iterating on user feedback.',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>workDone:'App live. 40+ experiences listed. Real revenue at ₹18K MRR. D7 retention at 38% (benchmark: 20%).',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>roadmap:'Incorporate as Pvt. Ltd (currently sole prop). Raise seed. Expand to 5 cities. Launch guide certification programme.',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>quote:'"My first hire won\'t be a developer. The product works. My first hire will be a community manager."',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>signals:['Only startup here with live revenue','Still a sole proprietorship — investors can\'t hold equity','Funded competitor just entered the same cities']},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'campuskeep',name:'CampusKeep',sector:'E-Commerce',stage:'Concept',founder:'Simran Ahuja',location:'Delhi',mrr:'₹0 (concept)',team:'Solo founder (student)',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>tagline:'Official licensed merchandise for India\'s top B-schools — starting with one, scaling to twenty',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>pitch:'A licensed merchandise and memorabilia brand for premium B-schools. Franchise model — each institution gets a custom branded store with campus-specific products. Captive buyers: current students, alumni, parents. Near-zero customer acquisition cost.',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>workDone:'Business plan developed. One B-school in advanced licensing discussions. No inventory procured yet.',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>roadmap:'Sign licensing deal <span class="s1">→</span> procure inventory <span class="s1">→</span> launch first store (online + kiosk) <span class="s1">→</span> franchise to 20 institutions.',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>quote:'"₹2 Cr of unofficial B-school merchandise is sold on Amazon every year by random sellers. None of it is licensed. That\'s the gap."',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>signals:['Captive market with near-zero CAC','Licensing approval is the single make-or-break dependency','Inventory and fulfilment model not yet worked out']},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'neuroleap',name:'NeuroLeap',sector:'EdTech / HealthTech',stage:'Concept',founder:'Leena Joseph &amp; Rajeev Pillai',location:'Kochi',mrr:'₹0 (concept)',team:'2 co-founders (educator + AI engineer)',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>tagline:'AI-powered early detection and personalised support for children with learning differences',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>pitch:'Platform that detects learning differences (Dyslexia, Dyscalculia, ADHD, APD) early and builds personalised intervention plans for children, parents, teachers, and therapists. Social impact is core — but B2B school partnerships make it commercially viable.',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>workDone:'Research and conceptualisation complete. Clinical psychologist advisory board being formed.',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>roadmap:'Build detection module <span class="s1">→</span> clinical validation <span class="s1">→</span> pilot with 5 schools <span class="s1">→</span> scale B2B channel.',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>quote:'"Most dyslexic children are labelled slow before they\'re ever diagnosed. By age 12, it\'s often too late for early intervention."',</p>
+<p class="p1"><span class="Apple-converted-space">   </span>signals:['Clinical validation is non-negotiable before any school will adopt','Child data under DPDP Act 2023','B2B school channel is right GTM — not direct-to-parent app']},</p>
+<p class="p1">];</p>
+<p class="p2"><br></p>
+<p class="p1">const EXPENSES = [</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'dig_ads',domain:'Marketing',label:'Digital advertising',desc:'Google, Meta, Instagram performance campaigns targeting core users',cost:2,unit:'L/month'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'brand_id',domain:'Marketing',label:'Brand identity &amp; design',desc:'Logo, visual identity, brand guidelines, pitch deck design',cost:3,unit:'L (one-time)'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'influencer',domain:'Marketing',label:'Influencer &amp; creator partnerships',desc:'Micro-influencers and content creators in the target niche',cost:5,unit:'L/campaign'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'pr_media',domain:'Marketing',label:'PR &amp; media outreach',desc:'Press releases, journalist relationships, startup media coverage',cost:4,unit:'L/quarter'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'events_conf',domain:'Marketing',label:'Trade fairs &amp; demo events',desc:'Exhibition stalls, industry conferences, product demos to prospects',cost:3,unit:'L/event'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'sales_hire',domain:'Sales',label:'Field sales team (2 hires)',desc:'B2B sales executives with monthly targets and incentive structure',cost:8,unit:'L/year each'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'crm_tools',domain:'Sales',label:'CRM &amp; sales automation',desc:'HubSpot/Salesforce licence, setup, and pipeline management training',cost:2,unit:'L/year'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'free_pilots',domain:'Sales',label:'Free/subsidised pilot programme',desc:'Offer first 10 customers zero-cost pilots to accelerate adoption',cost:5,unit:'L total'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'channel_partner',domain:'Sales',label:'Channel partner programme',desc:'Distributor/reseller agreements, partner margins and training incentives',cost:4,unit:'L'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'cust_success',domain:'Sales',label:'Customer success function',desc:'Dedicated post-sale account manager for retention and upsell',cost:7,unit:'L/year'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'ca_compliance',domain:'Finance',label:'CA firm &amp; statutory compliance',desc:'GST, ROC, MCA filings, annual audit, regulatory compliance',cost:2,unit:'L/year'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'ip_patent',domain:'Finance',label:'IP filing &amp; patent application',desc:'Trademark registration and provisional patent on core technology',cost:3,unit:'L'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'legal_counsel',domain:'Finance',label:'Legal counsel &amp; contracts',desc:'Founder agreements, customer contracts, ToS, privacy policy',cost:2,unit:'L'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'wc_buffer',domain:'Finance',label:'Working capital reserve',desc:'3-month cash runway buffer against delayed payments or unforeseen pivots',cost:10,unit:'L'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'biz_insurance',domain:'Finance',label:'Business insurance',desc:'D&amp;O liability, product liability, and cyber risk insurance',cost:1,unit:'L/year'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'office_rent',domain:'Operations',label:'Office space &amp; rent',desc:'Co-working desk or dedicated office space for the founding team',cost:2,unit:'L/month'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'equipment',domain:'Operations',label:'Equipment &amp; hardware',desc:'Laptops, servers, testing rigs, manufacturing and lab equipment',cost:5,unit:'L'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'cloud_infra',domain:'Operations',label:'Cloud &amp; IT infrastructure',desc:'AWS/GCP hosting, DevOps pipeline, CI/CD, cybersecurity setup',cost:3,unit:'L/year'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'logistics_scm',domain:'Operations',label:'Logistics &amp; supply chain',desc:'Shipping partnerships, warehousing, 3PL for physical goods delivery',cost:4,unit:'L'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'qa_testing',domain:'Operations',label:'QA, testing &amp; compliance lab',desc:'QA engineers, test environments, regulatory compliance testing',cost:3,unit:'L'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'tech_hire',domain:'HR',label:'Senior technical hire (CTO/dev lead)',desc:'First critical engineering or domain expert hire beyond founding team',cost:15,unit:'L/year CTC'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'founder_salary',domain:'HR',label:'Founder salaries',desc:'Minimum monthly draw for founders to sustain full-time commitment',cost:6,unit:'L/year each'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'esop_pool',domain:'HR',label:'ESOP pool creation',desc:'Reserve 10% equity for future key hires — strategic move, no cash outflow',cost:0,unit:'₹0 cash (equity only)'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'recruitment',domain:'HR',label:'Recruitment tools &amp; agency',desc:'Naukri/LinkedIn premium licences, placement agency fees for key hires',cost:2,unit:'L'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'training',domain:'HR',label:'Team training &amp; certifications',desc:'Domain certifications, upskilling workshops, and technical courses',cost:1,unit:'L'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'espresso',domain:"Founder's Perks",label:'Premium espresso machine',desc:'Because great startups run on great coffee',cost:0.5,unit:'L'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'ping_pong',domain:"Founder's Perks",label:'Office ping pong table',desc:'Culture, morale, and distraction — all in one purchase',cost:0.3,unit:'L'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'team_offsite',domain:"Founder's Perks",label:'Team offsite retreat',desc:'3-day Goa/Coorg bonding trip for the founding team',cost:1.5,unit:'L'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'branded_swag',domain:"Founder's Perks",label:'Branded team merchandise',desc:'Hoodies, mugs, stickers. Every startup needs swag.',cost:0.5,unit:'L'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>{id:'ergo_chairs',domain:"Founder's Perks",label:'Ergonomic chairs &amp; standing desks',desc:'Invest in the founders\' spines for the long haul',cost:1,unit:'L'},</p>
+<p class="p1">];</p>
+<p class="p2"><br></p>
+<p class="p1">const DOMAINS = ['Marketing','Sales','Finance','Operations','HR',"Founder's Perks"];</p>
+<p class="p2"><br></p>
+<p class="p1">const DIAGNOSTICS = {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>tradetab:[</p>
+<p class="p1"><span class="Apple-converted-space">    </span>{q:'What is TradeTab\'s most critical gap right now?',opts:['No technical co-founder to build the product','Market research is insufficient','Too many regulatory barriers','The market is too small']},</p>
+<p class="p1"><span class="Apple-converted-space">    </span>{q:'Who is TradeTab\'s primary paying customer?',opts:['Banks and NBFCs wanting credit data','Kirana and small shop owners','End consumers buying on credit','B2B aggregators and SaaS resellers']},</p>
+<p class="p1"><span class="Apple-converted-space">    </span>{q:'What should TradeTab focus on in the next 90 days?',opts:['Launch a national marketing campaign','Build the MVP and test with real shops','Hire a large sales team','Approach VCs for Series A funding']},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>],</p>
+<p class="p1"><span class="Apple-converted-space">  </span>medilingo:[</p>
+<p class="p1"><span class="Apple-converted-space">    </span>{q:'What is the mandatory step before MediLingo can legally sell anything in India?',opts:['FSSAI food safety approval','CDSCO Class B medical device certification','RBI fintech licence','No regulation needed for AI tools']},</p>
+<p class="p1"><span class="Apple-converted-space">    </span>{q:'Who is MediLingo\'s primary buyer?',opts:['Individual patients directly','State government health departments and hospitals','Medical colleges for training','General consumers via app store']},</p>
+<p class="p1"><span class="Apple-converted-space">    </span>{q:'What is MediLingo\'s most urgent technical challenge?',opts:['Device battery life in rural areas','Translation accuracy across dialects — especially less-documented languages','Hardware miniaturisation','Mobile app UX design']},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>],</p>
+<p class="p1"><span class="Apple-converted-space">  </span>quizforge:[</p>
+<p class="p1"><span class="Apple-converted-space">    </span>{q:'QuizForge is pursuing two segments at once (institutes + corporates). What is the core risk?',opts:['Both segments will reject the product','Founder attention and product focus will be diluted','Corporate market will copy the product','Institute market is too competitive']},</p>
+<p class="p1"><span class="Apple-converted-space">    </span>{q:'Which segment should QuizForge prioritise first and why?',opts:['Coaching institutes — faster to close, clearer pain point','Corporate L&amp;D — larger deal sizes and stickier contracts','Both simultaneously — more data, faster learning','Government contracts — most stable revenue']},</p>
+<p class="p1"><span class="Apple-converted-space">    </span>{q:'What is QuizForge\'s clearest technical differentiator?',opts:['Lower price than existing test platforms','AI-adaptive questioning that adjusts to student performance','Offline-first design for low-connectivity areas','Vernacular language interface']},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>],</p>
+<p class="p1"><span class="Apple-converted-space">  </span>trailmate:[</p>
+<p class="p1"><span class="Apple-converted-space">    </span>{q:'TrailMate has live revenue and strong retention. What is its single biggest risk right now?',opts:['Product quality is not good enough','A VC-funded competitor is entering the same cities with deeper pockets','The outdoor adventure market is too seasonal','Founder has no technical background']},</p>
+<p class="p1"><span class="Apple-converted-space">    </span>{q:'TrailMate is a sole proprietorship. Why does this matter for investment?',opts:['Sole props cannot open a bank account','Investors cannot hold equity in a sole prop — legal structure must change before any funding','Sole props pay significantly higher taxes','There is no practical difference for a startup at this stage']},</p>
+<p class="p1"><span class="Apple-converted-space">    </span>{q:'Given the competitive threat, what should TrailMate prioritise with investment capital?',opts:['Rebuild the app with new features','City expansion and community marketing before the competitor gains ground','Guide certification programme to improve supply quality','Hire a CFO to manage financials']},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>],</p>
+<p class="p1"><span class="Apple-converted-space">  </span>campuskeep:[</p>
+<p class="p1"><span class="Apple-converted-space">    </span>{q:'CampusKeep\'s core competitive advantage over Amazon and Etsy sellers is:',opts:['Lower prices on all products','Official licensed merchandise — authenticity and college branding no one else can offer','Better website and social media presence','Faster delivery turnaround']},</p>
+<p class="p1"><span class="Apple-converted-space">    </span>{q:'What is CampusKeep\'s single most important dependency for launch?',opts:['Building a great e-commerce website','Securing campus licensing agreements from the institution','Raising VC funding','Getting 10,000 social media followers']},</p>
+<p class="p1"><span class="Apple-converted-space">    </span>{q:'CampusKeep\'s business model is closest to:',opts:['D2C e-commerce brand (like Bewakoof)','Franchise and licensing model (like a college bookstore chain)','Subscription merchandise box','B2B wholesale distributor']},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>],</p>
+<p class="p1"><span class="Apple-converted-space">  </span>neuroleap:[</p>
+<p class="p1"><span class="Apple-converted-space">    </span>{q:'Why is clinical validation non-negotiable for NeuroLeap before any school deployment?',opts:['SEBI and RBI require it for edtech funding','Schools and parents will not adopt an AI tool diagnosing children without clinical evidence','The technology literally will not work without validation','Only government schools require it']},</p>
+<p class="p1"><span class="Apple-converted-space">    </span>{q:'What is NeuroLeap\'s most viable go-to-market channel?',opts:['Direct B2C: parents download the app from the App Store','B2B: partnerships with schools and special education platforms','Government tender for public schools','Hospital pediatric departments as the first buyer']},</p>
+<p class="p1"><span class="Apple-converted-space">    </span>{q:'Child learning data collected by NeuroLeap in India falls primarily under:',opts:['IT Act 2000 — outdated but still applicable','DPDP Act 2023 — Digital Personal Data Protection Act','COPPA (USA) — not applicable in India','No regulation yet specifically covers children\'s learning data']},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>],</p>
+<p class="p1">};</p>
+<p class="p2"><br></p>
+<p class="p1">const EVENTS = {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>tradetab:{badge:'Competitive shock',body:'KhaataBook — a Bangalore FinTech with ₹25 Cr Series A — just launched a credit-tracking product for kirana shop owners in Pune and Mumbai. They are running free agent-assisted onboarding, visiting shops door to door.',implication:'TradeTab has no product yet. The same customers Aryan interviewed are now being onboarded by a well-funded competitor.'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>medilingo:{badge:'Regulatory fast-track',body:'The Union Health Ministry has announced a fast-track pilot certification programme for AI medical devices targeting rural primary care. The process is 40% faster than standard CDSCO — but requires a working prototype submitted by end of Q3.',implication:'A genuine regulatory shortcut just opened. The question is whether the prototype will be ready in time to apply.'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>quizforge:{badge:'Revenue signal',body:'Two Delhi coaching institutes have sent formal expressions of interest in a paid pilot — ₹1.5L combined. They need one specific feature: branching question logic based on live student performance. It is not on the current roadmap.',implication:'Real revenue is within reach. QuizForge must decide whether to build what customers want or continue building what it planned.'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>trailmate:{badge:'Competitor escalation',body:'Summit Adventures — the VC-backed rival — has launched in Bangalore and Rishikesh with a ₹500 discount coupon campaign. TrailMate\'s weekly booking numbers dropped 18% in the last two weeks.',implication:'TrailMate has stronger retention data but lower capital. This is a loyalty vs. money battle and the clock is running.'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>campuskeep:{badge:'Licensing breakthrough',body:'A top-5 business school has agreed to enter exclusive licensing discussions. They want 10% royalty on sales and a physical kiosk in their main lobby. Decision expected in 30 days. They want proof of inventory capability.',implication:'CampusKeep\'s entire thesis just became real — but the timeline is tight and inventory has not been sourced yet.'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>neuroleap:{badge:'Enterprise signal',body:'A chain of 12 private schools expressed interest in piloting NeuroLeap\'s early detection module across 400 students. They will pay ₹800 per student assessment if a clinical validation report exists.',implication:'₹3.2L in immediate revenue is on the table — and a clinical validation path comes with it. What do you do with your remaining funds?'},</p>
+<p class="p1">};</p>
+<p class="p2"><br></p>
+<p class="p1">const CRISES = {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>tradetab:{title:'The copycat',body:'KhaataBook\'s onboarding agents have personally signed up 3 shop owners who told Aryan during his research that they would use TradeTab first. A fourth has asked for a feature comparison before deciding. TradeTab still has no working product.'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>medilingo:{title:'Prototype setback',body:'Independent accuracy testing of MediLingo\'s language model shows failure in 3 of 12 languages — including Odia and Bhojpuri. The fix requires retraining with 10x more data. Estimated additional cost: ₹18L. Current personal runway: ₹6L.'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>quizforge:{title:'Consulting distraction',body:'A corporate training firm offers Ankit ₹8L as a consulting contract to build their internal assessment tool — completely unrelated to coaching institutes. Accepting means pausing QuizForge development for a minimum of 3 months.'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>trailmate:{title:'Acquisition offer',body:'Summit Adventures has privately approached Neel with an offer to acquire TrailMate for ₹2 Cr at 65% stake. The offer expires in 5 days. Neel has ₹22,000 in personal runway left and has not yet incorporated the company.'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>campuskeep:{title:'Unofficial seller emerges',body:'An Etsy seller has started listing near-identical B-school branded merchandise at 50% lower prices with faster delivery and is now ranking above CampusKeep in search results. They use unofficial designs and claim no institutional affiliation.'},</p>
+<p class="p1"><span class="Apple-converted-space">  </span>neuroleap:{title:'Compliance notice',body:'A parent group has filed a complaint with the DPDP authority alleging NeuroLeap\'s school pilot collected children\'s cognitive assessment data without explicit parental consent forms meeting the new standard. A formal response is required within 14 days or the pilot must halt.'},</p>
+<p class="p1">};</p>
+<p class="p2"><br></p>
+<p class="p1">/* ============================================================</p>
+<p class="p1"><span class="Apple-converted-space">   </span>STATE</p>
+<p class="p1">============================================================ */</p>
+<p class="p1">let S = {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>screen:'home', user:null, savedId:null, detailIdx:0,</p>
+<p class="p1"><span class="Apple-converted-space">  </span>topAlloc:{}, diagnostics:{}, expenses:{}, r2adj:{}, crisisCall:{},</p>
+<p class="p1">};</p>
+<p class="p1">let CTX = {sid:null, alloc:0};</p>
+<p class="p1">const funded = () =&gt; STARTUPS.filter(s=&gt;(S.topAlloc[s.id]||0)&gt;0);</p>
+<p class="p2"><br></p>
+<p class="p1">async function save(phase) {</p>
+<p class="p1"><span class="Apple-converted-space">  </span>try {</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const p = {name:S.user?.name,roll:S.user?.roll,section:S.user?.section,</p>
+<p class="p1"><span class="Apple-converted-space">      </span>top_alloc:S.topAlloc,diagnostics:S.diagnostics,expenses:S.expenses,</p>
+<p class="p1"><span class="Apple-converted-space">      </span>r2adj:S.r2adj,crisis_call:S.crisisCall,phase_completed:phase};</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(S.savedId){ await db.from('submissions').update(p).eq('id',S.savedId); }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>else { const {data}=await db.from('submissions').insert(p).select(); if(data?.[0]?.id)S.savedId=data[0].id; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>} catch(e){console.error('Save error:',e);}</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">function go(screen){S.screen=screen;render();}</p>
+<p class="p1">window.go=go;</p>
+<p class="p2"><br></p>
+<p class="p1">/* ============================================================</p>
+<p class="p1"><span class="Apple-converted-space">   </span>SCREENS</p>
+<p class="p1">============================================================ */</p>
+<p class="p1">function drawHome(){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>app().innerHTML=`&lt;div style="text-align:center;padding:2.5rem 0"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;div style="font-size:11px;font-weight:700;letter-spacing:.12em;color:#4F46E5;text-transform:uppercase;margin-bottom:.5rem"&gt;NEXORA × XCEED · XLRI Jamshedpur&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;h1 style="margin-bottom:.25rem"&gt;Startup Investment Simulation&lt;/h1&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;p style="margin:.25rem auto 1.5rem;max-width:380px"&gt;3 rounds · 6 startups · ₹10 Crore · a test of how you think, not just what you know&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;div class="card" style="max-width:480px;margin:0 auto 1.25rem;text-align:left"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="g3" style="margin-bottom:.75rem"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>${['Round 1 — Read &amp; allocate','Round 2 — Markets react','Round 3 — Crisis calls'].map(t=&gt;`&lt;div style="background:#F9F9F8;border-radius:7px;padding:8px;font-size:11px;color:#555;text-align:center"&gt;${t}&lt;/div&gt;`).join('')}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;p&gt;You will allocate ₹10 Cr across 6 startups, choose specific expenses from a menu spanning Marketing, Sales, Finance, Operations, HR, and more. Then market events drop. Then crises hit. The panel reads your thinking — not your outcome.&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;button class="btn btn-p" style="padding:11px 32px;font-size:14px" onclick="go('register')"&gt;Enter as candidate <span class="s1">→</span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;br&gt;&lt;br&gt;&lt;button class="btn btn-g" style="font-size:12px" onclick="go('adminlogin')"&gt;Admin panel&lt;/button&gt;</p>
+<p class="p1">&lt;/div&gt;`;}</p>
+<p class="p2"><br></p>
+<p class="p1">function drawRegister(){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>app().innerHTML=`&lt;div style="max-width:400px;margin:2rem auto"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;span class="badge b-blue" style="margin-bottom:.75rem"&gt;Step 1 of 4&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;h1 style="margin-bottom:1rem"&gt;Register&lt;/h1&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;div class="card"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div style="display:flex;flex-direction:column;gap:14px"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div&gt;&lt;label&gt;Full name&lt;/label&gt;&lt;input type="text" id="rn" placeholder="As per XLRI records"&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div&gt;&lt;label&gt;Roll number&lt;/label&gt;&lt;input type="text" id="rr" placeholder="e.g. B25182"&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div&gt;&lt;label&gt;Section&lt;/label&gt;&lt;select id="rs"&gt;${['A','B','C','D','E'].map(s=&gt;`&lt;option${s==='D'?' selected':''}&gt;${s}&lt;/option&gt;`).join('')}&lt;/select&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;button class="btn btn-p btn-w" onclick="doRegister()"&gt;Begin simulation <span class="s1">→</span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;/div&gt;</p>
+<p class="p1">&lt;/div&gt;`;}</p>
+<p class="p1">window.doRegister=()=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const n=$('rn').value.trim(),r=$('rr').value.trim(),s=$('rs').value;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(n.length&lt;2||r.length&lt;3){alert('Please fill in all fields.');return;}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>S.user={name:n,roll:r,section:s}; go('brief');</p>
+<p class="p1">};</p>
+<p class="p2"><br></p>
+<p class="p1">function drawBrief(){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>app().innerHTML=`&lt;span class="badge b-blue" style="margin-bottom:.75rem"&gt;Step 2 of 4 — Read the cohort&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;h1 style="margin-bottom:.25rem"&gt;Meet the 6 Startups&lt;/h1&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;p style="margin-bottom:1rem"&gt;Read all startups before allocating. Click each to expand the full brief.&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;div id="bl"&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;button class="btn btn-p btn-w" onclick="go('r1alloc')"&gt;I have read all briefs — Allocate budget <span class="s1">→</span>&lt;/button&gt;`;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const bl=$('bl');</p>
+<p class="p1"><span class="Apple-converted-space">  </span>STARTUPS.forEach(s=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const d=document.createElement('div');d.className='card';d.style.cursor='pointer';</p>
+<p class="p1"><span class="Apple-converted-space">    </span>let open=false;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const draw=()=&gt;{d.innerHTML=`</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div class="row" onclick="this.parentElement._t()"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div style="flex:1"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div class="row" style="margin-bottom:3px"&gt;&lt;span style="font-size:15px;font-weight:700"&gt;${s.name}&lt;/span&gt;&lt;span class="badge b-blue"&gt;${s.sector}&lt;/span&gt;&lt;span class="badge ${s.mrr.includes('month')?'b-green':'b-amber'}"&gt;${s.stage}&lt;/span&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;p style="margin:0"&gt;${s.tagline}&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;span style="color:#aaa;font-size:18px"&gt;${open?'<span class="s2">▲</span>':'<span class="s1">▼</span>'}&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>${open?`&lt;hr&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div class="g2" style="margin-bottom:.75rem"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div&gt;&lt;label&gt;Founder&lt;/label&gt;&lt;p&gt;${s.founder}&lt;/p&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div&gt;&lt;label&gt;Location&lt;/label&gt;&lt;p&gt;${s.location}&lt;/p&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div&gt;&lt;label&gt;Team&lt;/label&gt;&lt;p&gt;${s.team}&lt;/p&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div&gt;&lt;label&gt;MRR&lt;/label&gt;&lt;p&gt;${s.mrr}&lt;/p&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;p style="margin-bottom:.75rem"&gt;${s.pitch}&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div class="g2" style="margin-bottom:.75rem"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div&gt;&lt;label&gt;Work done&lt;/label&gt;&lt;p&gt;${s.workDone}&lt;/p&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div&gt;&lt;label&gt;Roadmap&lt;/label&gt;&lt;p&gt;${s.roadmap}&lt;/p&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div class="ibox" style="border-left:3px solid #4F46E5;font-style:italic"&gt;${s.quote}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div&gt;${s.signals.map(sig=&gt;`&lt;span class="tag"&gt;${sig}&lt;/span&gt;`).join('')}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>`:''}`; };</p>
+<p class="p1"><span class="Apple-converted-space">    </span>d._t=()=&gt;{open=!open;draw();};draw();bl.appendChild(d);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>});</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">function drawR1Alloc(){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const total=Object.values(S.topAlloc).reduce((a,b)=&gt;a+b,0);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const rem=BUDGET-total; const over=rem&lt;0; const pct=Math.min(100,total/BUDGET*100);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>app().innerHTML=`&lt;span class="badge b-blue" style="margin-bottom:.75rem"&gt;Round 1 · Step 1 — Budget distribution&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;h1 style="margin-bottom:.25rem"&gt;Distribute ₹10 Crore&lt;/h1&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;p style="margin-bottom:1rem"&gt;Decide how much each startup gets. Enter amounts in &lt;b&gt;Lakhs&lt;/b&gt;. You can give ₹0 to any startup — that is a valid call.&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;div class="card" style="margin-bottom:1rem"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="row" style="justify-content:space-between;margin-bottom:5px"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;span class="muted"&gt;Allocated&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;span style="font-size:13px;font-weight:700;color:${over?'#DC2626':rem===0?'#059669':'#4F46E5'}"&gt;${fmt(total)} / ₹10.00 Cr&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="bb"&gt;&lt;div class="bf ${over?'over':rem===0?'full':''}" id="top-bar" style="width:${pct}%"&gt;&lt;/div&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="row" style="justify-content:space-between;margin-top:4px"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;span class="muted"&gt;${funded().length} startup${funded().length!==1?'s':''} funded&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;span class="muted"&gt;${fmt(Math.abs(rem))} ${over?'over budget':'remaining'}&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;div id="arows" style="display:flex;flex-direction:column;gap:7px;margin-bottom:1rem"&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;div class="ibox"&gt;Enter amounts in Lakhs. Type &lt;b&gt;50&lt;/b&gt; for ₹50L, &lt;b&gt;200&lt;/b&gt; for ₹2 Cr. For each startup you fund, you will choose specific expenses from a detailed menu.&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;button id="abtn" class="btn btn-p btn-w"&gt;Continue to expense planning <span class="s1">→</span>&lt;/button&gt;`;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>function buildRows(){</p>
+<p class="p1"><span class="Apple-converted-space">    </span>$('arows').innerHTML='';</p>
+<p class="p1"><span class="Apple-converted-space">    </span>STARTUPS.forEach(s=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const v=(S.topAlloc[s.id]||0)/100000; const has=v&gt;0;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const row=document.createElement('div');row.className='card';</p>
+<p class="p1"><span class="Apple-converted-space">      </span>row.style.cssText=`display:flex;align-items:center;gap:12px;padding:.7rem 1rem;border-color:${has?'#4F46E5':'#E5E5E3'}`;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>row.innerHTML=`&lt;div style="flex:1;min-width:0"&gt;&lt;div style="font-size:13px;font-weight:600"&gt;${s.name}&lt;/div&gt;&lt;div class="muted"&gt;${s.sector} · ${s.stage}&lt;/div&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="row" style="gap:4px;flex-shrink:0"&gt;&lt;span class="muted"&gt;₹&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;input type="number" min="0" step="1" placeholder="0" value="${v||''}" style="width:70px" oninput="updAlloc('${s.id}',this.value)"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;span class="muted" style="font-size:11px"&gt;L&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>${has?`&lt;span style="font-size:12px;font-weight:700;color:#4F46E5;min-width:56px;text-align:right"&gt;${fmt(S.topAlloc[s.id])}&lt;/span&gt;`:''}`;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>$('arows').appendChild(row);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>});</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const t=Object.values(S.topAlloc).reduce((a,b)=&gt;a+b,0);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const o=t&gt;BUDGET; const b=$('abtn');</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(b){b.disabled=o||funded().length===0;b.textContent=o?'Over budget — adjust allocations':funded().length===0?'Fund at least one startup to continue':'Continue to expense planning <span class="s1">→</span>';}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const bar=$('top-bar');</p>
+<p class="p1"><span class="Apple-converted-space">    </span>if(bar){const p=Math.min(100,t/BUDGET*100);bar.style.width=p+'%';bar.className='bf '+(t&gt;BUDGET?'over':t===BUDGET?'full':'');}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>window.updAlloc=(id,v)=&gt;{S.topAlloc[id]=Math.round(Math.max(0,parseFloat(v)||0)*100000);buildRows();};</p>
+<p class="p1"><span class="Apple-converted-space">  </span>$('abtn').onclick=()=&gt;{S.detailIdx=0;go('r1detail');};</p>
+<p class="p1"><span class="Apple-converted-space">  </span>buildRows();</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">function drawR1Detail(){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const f=funded();</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(S.detailIdx&gt;=f.length){save(1);go('r2events');return;}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const s=f[S.detailIdx]; CTX={sid:s.id,alloc:S.topAlloc[s.id]};</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const isLast=S.detailIdx===f.length-1;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const diags=S.diagnostics[s.id]||{};</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const qs=DIAGNOSTICS[s.id];</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const allDiags=qs.every((_,i)=&gt;diags['q'+i]);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const exps=S.expenses[s.id]||{};</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const expSpent=Object.values(exps).reduce((a,b)=&gt;a+b,0);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const over=expSpent&gt;CTX.alloc; const pct=Math.min(100,expSpent/CTX.alloc*100);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>app().innerHTML=`</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;div class="row" style="margin-bottom:1rem"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;button class="btn btn-g" style="padding:6px 12px;font-size:12px" onclick="S.detailIdx=Math.max(0,S.detailIdx-1);go('r1detail')"&gt;<span class="s1">←</span> Back&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;span class="badge b-blue"&gt;Startup ${S.detailIdx+1} of ${f.length}&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;span style="margin-left:auto;font-size:13px;font-weight:700;color:#4F46E5"&gt;${s.name} · ${fmt(CTX.alloc)}&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;div class="card card-hi" style="margin-bottom:1rem"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;h2 style="margin-bottom:4px"&gt;${s.name} &lt;span class="badge b-blue"&gt;${s.sector}&lt;/span&gt;&lt;/h2&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;p style="margin-bottom:.5rem"&gt;${s.pitch}&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="ibox" style="border-left:3px solid #4F46E5;font-style:italic;margin:0"&gt;${s.quote}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;div class="card" style="margin-bottom:1rem"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;h2 style="margin-bottom:.5rem"&gt;Three questions before you allocate&lt;/h2&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;p style="margin-bottom:1rem"&gt;Your answers will be compared to your spending decisions by the panel.&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>${qs.map((q,i)=&gt;`&lt;div style="margin-bottom:1rem"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;label&gt;${i+1}. ${q.q}&lt;/label&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;select onchange="setDiag('${s.id}','q${i}',this.value)"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;option value=""&gt;— Select your answer —&lt;/option&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>${q.opts.map(o=&gt;`&lt;option${diags['q'+i]===o?' selected':''}&gt;${o}&lt;/option&gt;`).join('')}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/select&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;`).join('')}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>${allDiags?`</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;div class="card" style="margin-bottom:1rem"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="row" style="justify-content:space-between;margin-bottom:5px"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;h2&gt;Expense planning&lt;/h2&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;span style="font-size:13px;font-weight:700;color:${over?'#DC2626':expSpent===CTX.alloc?'#059669':'#4F46E5'}"&gt;${fmt(expSpent)} / ${fmt(CTX.alloc)}&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="bb"&gt;&lt;div class="bf ${over?'over':expSpent===CTX.alloc?'full':''}" id="ebar" style="width:${pct}%"&gt;&lt;/div&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="row" style="justify-content:space-between;margin-bottom:.75rem;margin-top:4px"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;span class="muted"&gt;Enter 0 to skip an expense. Enter amount in Lakhs.&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;span class="muted" id="eleft"&gt;${fmt(Math.abs(CTX.alloc-expSpent))} ${over?'over':'remaining'}&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div id="egrid"&gt;${buildExpGrid(s.id,CTX.alloc)}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;button id="dbtn" class="btn btn-p btn-w" onclick="nextDetail()"&gt;${isLast?'Submit Round 1 <span class="s1">→</span>':'Next startup <span class="s1">→</span>'}&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>`:`&lt;div class="ibox" style="text-align:center;color:#888"&gt;Answer all 3 questions above to unlock expense planning <span class="s1">↑</span>&lt;/div&gt;`}`;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(allDiags) updateDetBtn(isLast,CTX.alloc,expSpent,over);</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">function buildExpGrid(sid,alloc){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const exps=S.expenses[sid]||{};</p>
+<p class="p1"><span class="Apple-converted-space">  </span>let html='';</p>
+<p class="p1"><span class="Apple-converted-space">  </span>DOMAINS.forEach(domain=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const items=EXPENSES.filter(e=&gt;e.domain===domain);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>html+=`&lt;div class="domain-hd"&gt;${domain}&lt;/div&gt;`;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>items.forEach(e=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const v=exps[e.id]?exps[e.id]/100000:'';</p>
+<p class="p1"><span class="Apple-converted-space">      </span>html+=`&lt;div class="exp-row"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="exp-info" style="flex:1;min-width:0"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div class="exp-lbl"&gt;${e.label}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div class="exp-desc"&gt;${e.desc}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div class="exp-cost"&gt;Typical: ${e.cost===0?'₹0 (equity only)':'₹'+e.cost+'L / '+e.unit}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="row" style="gap:4px;flex-shrink:0"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;input type="number" min="0" step=".5" placeholder="0" value="${v}" oninput="updExp('${e.id}',this.value)"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;span class="muted" style="font-size:11px"&gt;L&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;`;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>});</p>
+<p class="p1"><span class="Apple-converted-space">  </span>});</p>
+<p class="p1"><span class="Apple-converted-space">  </span>return html;</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">window.setDiag=(sid,key,val)=&gt;{if(!S.diagnostics[sid])S.diagnostics[sid]={};S.diagnostics[sid][key]=val;drawR1Detail();};</p>
+<p class="p2"><br></p>
+<p class="p1">window.updExp=(eid,v)=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const sid=CTX.sid; const alloc=CTX.alloc;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(!S.expenses[sid])S.expenses[sid]={};</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const val=Math.round(Math.max(0,parseFloat(v)||0)*100000);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(val===0)delete S.expenses[sid][eid]; else S.expenses[sid][eid]=val;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const spent=Object.values(S.expenses[sid]).reduce((a,b)=&gt;a+b,0);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const over=spent&gt;alloc; const pct=Math.min(100,spent/alloc*100);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const bar=$('ebar'); if(bar){bar.style.width=pct+'%';bar.className='bf '+(over?'over':spent===alloc?'full':'');}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const lbl=$('eleft'); if(lbl){lbl.textContent=fmt(Math.abs(alloc-spent))+(over?' over':' remaining');lbl.style.color=over?'#DC2626':'';}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>updateDetBtn(S.detailIdx===funded().length-1,alloc,spent,over);</p>
+<p class="p1">};</p>
+<p class="p2"><br></p>
+<p class="p1">function updateDetBtn(isLast,alloc,spent,over){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const b=$('dbtn'); if(!b)return;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const ok=!over&amp;&amp;spent&gt;0;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>b.disabled=!ok;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>b.textContent=over?'Over budget — adjust':spent===0?'Allocate to at least one expense':isLast?'Submit Round 1 <span class="s1">→</span>':'Next startup <span class="s1">→</span>';</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">window.nextDetail=()=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(S.detailIdx&lt;funded().length-1){S.detailIdx++;go('r1detail');}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>else{save(1);go('r2events');}</p>
+<p class="p1">};</p>
+<p class="p2"><br></p>
+<p class="p1">function drawR2Events(){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>app().innerHTML=`&lt;span class="badge b-red" style="margin-bottom:.75rem"&gt;Round 2 — Market Events&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;h1 style="margin-bottom:.25rem"&gt;What Just Happened&lt;/h1&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;p style="margin-bottom:1.25rem"&gt;Six developments across your portfolio. These have happened. How you respond is what the panel evaluates.&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>${funded().map(s=&gt;{const ev=EVENTS[s.id];return`&lt;div class="card card-hi" style="margin-bottom:.75rem"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="row" style="margin-bottom:.5rem"&gt;&lt;span style="font-size:15px;font-weight:700"&gt;${s.name}&lt;/span&gt;&lt;span class="badge b-red"&gt;${ev.badge}&lt;/span&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;p style="margin-bottom:.5rem"&gt;${ev.body}&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="ibox"&gt;&lt;b&gt;Implication:&lt;/b&gt; ${ev.implication}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;/div&gt;`;}).join('')}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;button class="btn btn-p btn-w" onclick="go('r2adjust')"&gt;Proceed to rebalancing <span class="s1">→</span>&lt;/button&gt;`;}</p>
+<p class="p2"><br></p>
+<p class="p1">function drawR2Adjust(){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>app().innerHTML=`&lt;span class="badge b-blue" style="margin-bottom:.75rem"&gt;Round 2 — Rebalancing&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;h1 style="margin-bottom:.25rem"&gt;Rebalance Your Portfolio&lt;/h1&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;p style="margin-bottom:1rem"&gt;You can adjust each startup's allocation by up to &lt;b&gt;±20%&lt;/b&gt; of your original investment. Use the sliders.&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;div id="r2rows" style="display:flex;flex-direction:column;gap:8px;margin-bottom:1rem"&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;button class="btn btn-p btn-w" onclick="save(2);go('r3crisis')"&gt;Submit Round 2 &amp; proceed to crisis calls <span class="s1">→</span>&lt;/button&gt;`;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>funded().forEach(s=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const base=S.topAlloc[s.id]; const min=base*.8; const max=base*1.2;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const cur=S.r2adj[s.id]!==undefined?S.r2adj[s.id]:base;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const ev=EVENTS[s.id]; const card=document.createElement('div');card.className='card';</p>
+<p class="p1"><span class="Apple-converted-space">    </span>card.innerHTML=`&lt;div class="row" style="justify-content:space-between;margin-bottom:.5rem"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div&gt;&lt;span style="font-size:14px;font-weight:700"&gt;${s.name}&lt;/span&gt; &lt;span class="muted"&gt;— ${ev.badge}&lt;/span&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div style="text-align:right"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div id="r2a-${s.id}" style="font-size:14px;font-weight:700;color:${cur&gt;base?'#059669':cur&lt;base?'#DC2626':'#1a1a1a'}"&gt;${fmt(cur)}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div id="r2d-${s.id}" class="muted"&gt;${cur===base?'unchanged':((cur&gt;base?'+':'')+fmt(cur-base))}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="row" style="font-size:10px;color:#aaa;justify-content:space-between;margin-bottom:3px"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;span&gt;-20% (${fmt(min)})&lt;/span&gt;&lt;span&gt;Original (${fmt(base)})&lt;/span&gt;&lt;span&gt;+20% (${fmt(max)})&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;input type="range" min="${min}" max="${max}" step="10000" value="${cur}" oninput="updR2('${s.id}',this.value)"&gt;`;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>$('r2rows').appendChild(card);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>});</p>
+<p class="p1"><span class="Apple-converted-space">  </span>window.updR2=(sid,val)=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const v=Math.round(parseFloat(val)); S.r2adj[sid]=v;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const base=S.topAlloc[sid];</p>
+<p class="p1"><span class="Apple-converted-space">    </span>$('r2a-'+sid).textContent=fmt(v); $('r2a-'+sid).style.color=v&gt;base?'#059669':v&lt;base?'#DC2626':'#1a1a1a';</p>
+<p class="p1"><span class="Apple-converted-space">    </span>$('r2d-'+sid).textContent=v===base?'unchanged':((v&gt;base?'+':'')+fmt(v-base));</p>
+<p class="p1"><span class="Apple-converted-space">  </span>};</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">function drawR3Crisis(){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const f=funded(); let cidx=0;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>function draw(){</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const s=f[cidx]; const cr=CRISES[s.id];</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const dec=S.crisisCall[s.id]||{call:'',reason:''};</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const isLast=cidx===f.length-1;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>app().innerHTML=`&lt;span class="badge b-red" style="margin-bottom:.75rem"&gt;Round 3 · Crisis ${cidx+1} of ${f.length}&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;h1 style="margin-bottom:.25rem"&gt;${cr.title}&lt;/h1&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="card card-hi" style="margin-bottom:1rem"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;span class="badge b-blue" style="margin-bottom:.5rem"&gt;${s.name}&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;p&gt;${cr.body}&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div style="margin-bottom:1rem"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;label&gt;Your call&lt;/label&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div class="g3"&gt;${['Pivot','Double down','Exit'].map(c=&gt;`&lt;div class="crisis-opt${dec.call===c?' sel':''}" onclick="setCall('${s.id}','${c}')"&gt;${c==='Pivot'?'<span class="s3">🔄</span> Pivot':c==='Double down'?'<span class="s3">📈</span> Double down':'<span class="s3">🚪</span> Exit'}&lt;/div&gt;`).join('')}&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div style="margin-bottom:1rem"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div class="row" style="justify-content:space-between;margin-bottom:.4rem"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;label style="margin:0"&gt;Your reasoning (40 words minimum)&lt;/label&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;span class="muted" id="r3wc"&gt;${wc(dec.reason)} / 40&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;textarea id="r3rat" rows="4" placeholder="Why this call? What are you prioritising? What trade-offs are you accepting?"&gt;${dec.reason||''}&lt;/textarea&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;button id="r3btn" class="btn btn-p btn-w"&gt;${isLast?'Submit final simulation <span class="s1">→</span>':'Next crisis <span class="s1">→</span>'}&lt;/button&gt;`;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>window.setCall=(sid,call)=&gt;{if(!S.crisisCall[sid])S.crisisCall[sid]={call:'',reason:''};S.crisisCall[sid].call=call;draw();};</p>
+<p class="p1"><span class="Apple-converted-space">    </span>$('r3rat').oninput=e=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if(!S.crisisCall[s.id])S.crisisCall[s.id]={call:dec.call,reason:''};</p>
+<p class="p1"><span class="Apple-converted-space">      </span>S.crisisCall[s.id].reason=e.target.value;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const w=wc(e.target.value);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const wcel=$('r3wc');if(wcel){wcel.textContent=w+' / 40';wcel.style.color=w&gt;=40?'#059669':'#888';}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>updR3Btn();</p>
+<p class="p1"><span class="Apple-converted-space">    </span>};</p>
+<p class="p1"><span class="Apple-converted-space">    </span>function updR3Btn(){</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const d=S.crisisCall[s.id]||{}; const w=wc(d.reason||'');</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const b=$('r3btn');if(!b)return;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const ok=d.call&amp;&amp;w&gt;=40; b.disabled=!ok;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>b.textContent=!d.call?'Select a call first':w&lt;40?`${40-w} more words needed`:isLast?'Submit final simulation <span class="s1">→</span>':'Next crisis <span class="s1">→</span>';</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>$('r3btn').onclick=()=&gt;{if(cidx&lt;f.length-1){cidx++;draw();}else{save(3);go('done');}};</p>
+<p class="p1"><span class="Apple-converted-space">    </span>updR3Btn();</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p1"><span class="Apple-converted-space">  </span>draw();</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">function drawDone(){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>app().innerHTML=`&lt;div style="text-align:center;padding:2.5rem 0"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;div style="font-size:48px;margin-bottom:1rem"&gt;<span class="s3">🎯</span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;h1&gt;Simulation complete&lt;/h1&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;p style="max-width:420px;margin:.75rem auto 1.5rem"&gt;Your portfolio, expense decisions, diagnostic answers, and crisis reasoning have been recorded. The NEXORA panel will review your thinking across all three rounds.&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;div class="card" style="text-align:left;max-width:480px;margin:0 auto 1rem"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;label&gt;What the panel looks at&lt;/label&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;ul style="font-size:13px;color:#555;line-height:1.9;padding-left:1.1rem"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;li&gt;How you split ₹10 Cr and which startups you skipped&lt;/li&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;li&gt;Which expense domains you prioritised for each startup&lt;/li&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;li&gt;Whether your diagnostic answers matched your spending pattern&lt;/li&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;li&gt;How you reacted to market events&lt;/li&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;li&gt;The reasoning behind each crisis call&lt;/li&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/ul&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;p class="muted"&gt;You may close this window. Results will be communicated by the NEXORA team.&lt;/p&gt;</p>
+<p class="p1">&lt;/div&gt;`;}</p>
+<p class="p2"><br></p>
+<p class="p1">function drawAdminLogin(){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>app().innerHTML=`&lt;div style="max-width:300px;margin:3rem auto;text-align:center"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;h1 style="margin-bottom:1rem"&gt;Admin access&lt;/h1&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;input type="password" id="apw" placeholder="Password" style="margin-bottom:6px"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;div id="apwerr" style="color:#DC2626;font-size:11px;min-height:14px;margin-bottom:8px"&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;button class="btn btn-p btn-w" onclick="chkAdmin()"&gt;Enter&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;br&gt;&lt;br&gt;&lt;button class="btn btn-g" onclick="go('home')"&gt;<span class="s1">←</span> Back&lt;/button&gt;</p>
+<p class="p1">&lt;/div&gt;`;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>$('apw').addEventListener('keydown',e=&gt;e.key==='Enter'&amp;&amp;window.chkAdmin());</p>
+<p class="p1">}</p>
+<p class="p1">window.chkAdmin=()=&gt;{if($('apw').value==='NEXORA2025')go('admin');else $('apwerr').textContent='Incorrect password';};</p>
+<p class="p2"><br></p>
+<p class="p1">async function drawAdmin(){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>app().innerHTML=`&lt;div class="row" style="margin-bottom:1rem"&gt;&lt;h1&gt;Admin Panel&lt;/h1&gt;&lt;button class="btn btn-g" style="margin-left:auto" onclick="go('home')"&gt;<span class="s1">←</span> Home&lt;/button&gt;&lt;/div&gt;&lt;p class="muted"&gt;Loading...&lt;/p&gt;`;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const {data,error}=await db.from('submissions').select('*').order('submitted_at',{ascending:false});</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(error){app().innerHTML+=`&lt;p style="color:#DC2626"&gt;Error: ${error.message}&lt;/p&gt;`;return;}</p>
+<p class="p2"><span class="Apple-converted-space">  </span></p>
+<p class="p1"><span class="Apple-converted-space">  </span>// Build domain spend profile per candidate</p>
+<p class="p1"><span class="Apple-converted-space">  </span>function domainBreakdown(expenses){</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const totals={};</p>
+<p class="p1"><span class="Apple-converted-space">    </span>DOMAINS.forEach(d=&gt;totals[d]=0);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>STARTUPS.forEach(s=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const ex=expenses?.[s.id]||{};</p>
+<p class="p1"><span class="Apple-converted-space">      </span>Object.entries(ex).forEach(([eid,amt])=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const exp=EXPENSES.find(e=&gt;e.id===eid);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if(exp)totals[exp.domain]=(totals[exp.domain]||0)+amt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>});</p>
+<p class="p1"><span class="Apple-converted-space">    </span>});</p>
+<p class="p1"><span class="Apple-converted-space">    </span>return totals;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>app().innerHTML=`&lt;div class="row" style="margin-bottom:1rem"&gt;&lt;h1&gt;Admin Panel&lt;/h1&gt;&lt;button class="btn btn-g" style="margin-left:auto" onclick="go('home')"&gt;<span class="s1">←</span> Home&lt;/button&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;div class="card" style="margin-bottom:1rem"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="g3"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div&gt;&lt;label&gt;Total submissions&lt;/label&gt;&lt;div style="font-size:22px;font-weight:700"&gt;${data.length}&lt;/div&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div&gt;&lt;label&gt;Round 1 complete&lt;/label&gt;&lt;div style="font-size:22px;font-weight:700"&gt;${data.filter(d=&gt;d.phase_completed&gt;=1).length}&lt;/div&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div&gt;&lt;label&gt;All 3 rounds done&lt;/label&gt;&lt;div style="font-size:22px;font-weight:700"&gt;${data.filter(d=&gt;d.phase_completed&gt;=3).length}&lt;/div&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>${data.length===0?'&lt;div class="ibox"&gt;No submissions yet.&lt;/div&gt;':data.map(row=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const db2=domainBreakdown(row.expenses);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const totalExp=Object.values(db2).reduce((a,b)=&gt;a+b,0);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>return`&lt;div class="card" style="margin-bottom:.75rem"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div class="row" style="margin-bottom:.5rem"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;b&gt;${row.name}&lt;/b&gt;&lt;span class="badge b-blue"&gt;${row.roll}&lt;/span&gt;&lt;span class="badge b-amber"&gt;Sec ${row.section}&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;span style="margin-left:auto" class="badge ${row.phase_completed&gt;=3?'b-green':row.phase_completed&gt;=2?'b-amber':'b-red'}"&gt;Phase ${row.phase_completed}/3&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div style="margin-bottom:.5rem"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>${STARTUPS.map(s=&gt;{const a=row.top_alloc?.[s.id]||0;return a&gt;0?`&lt;span class="tag"&gt;&lt;b&gt;${s.name}&lt;/b&gt;: ${fmt(a)}&lt;/span&gt;`:''}).join('')}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;div style="margin-bottom:.75rem"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;label style="margin-bottom:4px"&gt;Expense domain profile (where their mind goes)&lt;/label&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div style="display:flex;gap:6px;flex-wrap:wrap"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>${DOMAINS.map(d=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const amt=db2[d]||0; const pct2=totalExp&gt;0?Math.round(amt/totalExp*100):0;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>return pct2&gt;0?`&lt;div style="background:#EEF2FF;border-radius:6px;padding:4px 8px;font-size:11px"&gt;&lt;b style="color:#4F46E5"&gt;${d}&lt;/b&gt;&lt;br&gt;&lt;span style="color:#555"&gt;${pct2}% (${fmt(amt)})&lt;/span&gt;&lt;/div&gt;`:'';</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}).join('')}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>${row.crisis_call?`&lt;div style="margin-bottom:.5rem"&gt;${Object.entries(row.crisis_call).map(([sid,v])=&gt;{const st=STARTUPS.find(x=&gt;x.id===sid);return`&lt;span class="tag"&gt;&lt;b&gt;${st?.name||sid}:&lt;/b&gt; ${v.call}&lt;/span&gt;`;}).join('')}&lt;/div&gt;`:''}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;details&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;summary style="font-size:12px;cursor:pointer;color:#4F46E5"&gt;Full detail view&lt;/summary&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div style="margin-top:.75rem;font-size:12px;line-height:1.7"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;b&gt;Diagnostic answers:&lt;/b&gt;&lt;br&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>${STARTUPS.map(s=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const d2=row.diagnostics?.[s.id]||{};</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const qs=DIAGNOSTICS[s.id];</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if(!Object.keys(d2).length)return'';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>return`&lt;div style="margin:.4rem 0"&gt;&lt;b&gt;${s.name}:&lt;/b&gt; ${qs.map((q,i)=&gt;`[${q.q.substring(0,30)}...] <span class="s1">→</span> ${d2['q'+i]||'—'}`).join(' | ')}&lt;/div&gt;`;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}).join('')}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;br&gt;&lt;b&gt;Expenses breakdown:&lt;/b&gt;&lt;br&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>${STARTUPS.map(s=&gt;{</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const ex=row.expenses?.[s.id]||{};</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const items=Object.entries(ex).filter(([,v])=&gt;v&gt;0);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if(!items.length)return'';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>return`&lt;div style="margin:.4rem 0"&gt;&lt;b&gt;${s.name}:&lt;/b&gt; ${items.map(([eid,amt])=&gt;{const exp=EXPENSES.find(e=&gt;e.id===eid);return`${exp?.label||eid} (${fmt(amt)})`;}).join(' · ')}&lt;/div&gt;`;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}).join('')}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;br&gt;&lt;b&gt;Crisis reasoning:&lt;/b&gt;&lt;br&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>${Object.entries(row.crisis_call||{}).map(([sid,v])=&gt;{const st=STARTUPS.find(x=&gt;x.id===sid);return`&lt;div style="margin:.4rem 0"&gt;&lt;b&gt;${st?.name||sid} — ${v.call}:&lt;/b&gt; ${v.reason}&lt;/div&gt;`;}).join('')}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>&lt;/details&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;`;}).join('')}`;</p>
+<p class="p1">}</p>
+<p class="p2"><br></p>
+<p class="p1">/* ============================================================</p>
+<p class="p1"><span class="Apple-converted-space">   </span>ROUTER</p>
+<p class="p1">============================================================ */</p>
+<p class="p1">function render(){</p>
+<p class="p1"><span class="Apple-converted-space">  </span>const s=S.screen;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>if(s==='home')drawHome();</p>
+<p class="p1"><span class="Apple-converted-space">  </span>else if(s==='register')drawRegister();</p>
+<p class="p1"><span class="Apple-converted-space">  </span>else if(s==='brief')drawBrief();</p>
+<p class="p1"><span class="Apple-converted-space">  </span>else if(s==='r1alloc')drawR1Alloc();</p>
+<p class="p1"><span class="Apple-converted-space">  </span>else if(s==='r1detail')drawR1Detail();</p>
+<p class="p1"><span class="Apple-converted-space">  </span>else if(s==='r2events')drawR2Events();</p>
+<p class="p1"><span class="Apple-converted-space">  </span>else if(s==='r2adjust')drawR2Adjust();</p>
+<p class="p1"><span class="Apple-converted-space">  </span>else if(s==='r3crisis')drawR3Crisis();</p>
+<p class="p1"><span class="Apple-converted-space">  </span>else if(s==='done')drawDone();</p>
+<p class="p1"><span class="Apple-converted-space">  </span>else if(s==='adminlogin')drawAdminLogin();</p>
+<p class="p1"><span class="Apple-converted-space">  </span>else if(s==='admin')drawAdmin();</p>
+<p class="p1">}</p>
+<p class="p1">render();</p>
+<p class="p1">&lt;/script&gt;</p>
+<p class="p1">&lt;/body&gt;</p>
+<p class="p1">&lt;/html&gt;</p>
+</body>
+</html>
