@@ -308,12 +308,12 @@ const CRISES={
   neuroleap:{title:'The compliance notice',body:'A parents\' group filed a formal complaint with India\'s data protection authority alleging that NeuroLeap\'s school pilot collected children\'s cognitive assessment data without properly completing the consent requirements under the DPDP Act 2023. A formal written response is required within 14 days or the pilot must be suspended immediately.'},
 };
 
-let S={screen:'home',user:null,savedId:null,detailIdx:0,topAlloc:{},diagnostics:{},expenses:{},y2alloc:{},r2diagnostics:{},crisisCall:{},briefsRead:[],researchSpent:0,extensionCost:0,roundStarted:false,timerEndTime:null,timerTotalSeconds:TIMER_BASE,expWarned:{},isNexora:false,};
+let S={screen:'home',user:null,savedId:null,detailIdx:0,topAlloc:{},diagnostics:{},expenses:{},y2alloc:{},r2diagnostics:{},crisisCall:{},briefsRead:[],researchSpent:0,extensionCost:0,roundStarted:false,timerEndTime:null,timerTotalSeconds:TIMER_BASE,expWarned:{},isNexora:false,phaseTimestamps:{},pendingExtension:0};
 
 function saveLocal(){try{localStorage.setItem('nexora_sim_v3',JSON.stringify(S));}catch(e){}}
 function loadLocal(){try{const d=localStorage.getItem('nexora_sim_v3');if(d){Object.assign(S,JSON.parse(d));return true;}}catch(e){}return false;}
 
-const SHEETS_URL='https://script.google.com/macros/s/AKfycbwuGkT80ql0eGsPhv8WveVIrPASTyzPlimqC7wJEnzAfcU1ozTuSGCqQOx2XoL6kMqV/exec'; // Paste your Google Apps Script URL here after setup
+const SHEETS_URL=''; // Paste your Google Apps Script URL here after setup
 
 function toast(msg,type='err'){
   const d=document.createElement('div');
@@ -324,9 +324,51 @@ function toast(msg,type='err'){
   d.textContent=msg;document.body.appendChild(d);setTimeout(()=>d.remove(),6000);
 }
 
+function buildFinancialSummary(){
+  const DNA={
+    tradetab:{good:['Operations','HR'],ideal:'Operations 40%, HR 40%, Finance 10%'},
+    medilingo:{good:['Finance','Operations'],ideal:'Finance 35%, Operations 35%, HR 20%'},
+    quizforge:{good:['Operations','Marketing','Sales'],ideal:'Operations 45%, Marketing 15%, Sales 15%'},
+    trailmate:{good:['Marketing','Sales'],ideal:'Marketing 30%, Sales 25%, HR 20%'},
+    campuskeep:{good:['Operations','Finance'],ideal:'Operations 40%, Finance 25%'},
+    neuroleap:{good:['HR','Finance'],ideal:'HR 35%, Operations 25%, Finance 20%'},
+  };
+  let totalInvested=0,totalReturned=0;
+  const y1Allocs={},y1Expenses={},y1Outcomes={};
+  STARTUPS.forEach(s=>{
+    const alloc=S.topAlloc[s.id]||0;if(!alloc)return;
+    y1Allocs[s.id]={name:s.name,sector:s.sector,stage:s.stage,allocated:alloc,ideal:DNA[s.id]||{}};
+    const expenses=S.expenses[s.id]||{};
+    const byDomain={};DOMAINS.forEach(d=>byDomain[d]=0);
+    const detail=[];
+    Object.entries(expenses).forEach(([eid,amt])=>{const exp=EXPENSES.find(e=>e.id===eid);if(exp){byDomain[exp.domain]=(byDomain[exp.domain]||0)+amt;detail.push({id:eid,label:exp.label,domain:exp.domain,amount:amt});}});
+    const expTotal=Object.values(expenses).reduce((a,b)=>a+b,0);
+    y1Expenses[s.id]={by_domain:byDomain,total:expTotal,detail};
+    const r=calcY1Return(s.id);
+    if(r){y1Outcomes[s.id]={invested:r.invested,returned:r.returned,profit:r.profit,isGood:r.isGood};totalInvested+=r.invested;totalReturned+=r.returned;}
+  });
+  const netPL=totalReturned-totalInvested;
+  const y2Allocs={};
+  STARTUPS.forEach(s=>{const a=S.y2alloc[s.id]||0;if(a>0)y2Allocs[s.id]={name:s.name,allocated:a};});
+  return{
+    budget_y1:BUDGET_Y1,extension_cost:S.extensionCost||0,research_spent:S.researchSpent,
+    investable_y1:Math.max(0,BUDGET_Y1-(S.extensionCost||0)-S.researchSpent),
+    total_invested:totalInvested,
+    y1_unallocated:Math.max(0,BUDGET_Y1-(S.extensionCost||0)-S.researchSpent-totalInvested),
+    total_returned:totalReturned,net_pl:netPL,budget_y2:calcY2Budget(),
+    y1_allocations:y1Allocs,y1_expenses:y1Expenses,y1_outcomes:y1Outcomes,y2_allocations:y2Allocs,
+  };
+}
+
 function save(phase, isFinal=false){
   saveLocal();
   if(!SHEETS_URL||!S.user)return;
+  // Record phase completion timestamp
+  const now=new Date().toISOString();
+  if(phase===1)S.phaseTimestamps.p1End=now;
+  if(phase===2)S.phaseTimestamps.p2End=now;
+  if(phase===3)S.phaseTimestamps.p3End=now;
+  saveLocal();
   const form=new URLSearchParams();
   form.append('data',JSON.stringify({
     candidate:{name:S.user.name||'',roll:S.user.roll||'',program:S.user.program||'',section:S.user.section||''},
@@ -335,8 +377,10 @@ function save(phase, isFinal=false){
       briefs_read:S.briefsRead,research_spent:S.researchSpent,extension_cost:S.extensionCost,
       timed_out:false},
     report_prompt:isFinal?buildReportPrompt(false):null,
+    financial_summary:isFinal?buildFinancialSummary():null,
+    phase_timestamps:S.phaseTimestamps,
     phase_completed:phase,is_final:isFinal,
-    submitted_at:new Date().toISOString()
+    submitted_at:now
   }));
   fetch(SHEETS_URL,{method:'POST',body:form}).catch(()=>{});
 }
@@ -446,6 +490,7 @@ window.beginSim=function(){
   S.timerTotalSeconds=TIMER_BASE+ext*60;
   S.timerEndTime=Date.now()+(S.timerTotalSeconds*1000);
   S.roundStarted=true;
+  S.phaseTimestamps={simStart:new Date().toISOString()};
   saveLocal();
   startCountdown();
   go('brief');
@@ -744,6 +789,7 @@ function drawR3Crisis(){
     app().innerHTML=html;
     $('r3rat').oninput=e=>{
       if(!S.crisisCall[s.id])S.crisisCall[s.id]={call:dec.call,reason:''};
+      if(!S.crisisCall[s.id].crisis_start)S.crisisCall[s.id].crisis_start=new Date().toISOString();
       S.crisisCall[s.id].reason=e.target.value;saveLocal();
       const w=wc(e.target.value);const wcel=$('r3wc');
       if(wcel){wcel.textContent=w+' / 40';wcel.style.color=w>=40?'#059669':'#888';}
@@ -754,7 +800,7 @@ function drawR3Crisis(){
       const ok=d.call&&w>=40;b.disabled=!ok;
       b.textContent=!d.call?'Select a call first':w<40?(40-w)+' more words needed':isLast?'Submit simulation':'Next crisis';
     }
-    $('r3btn').onclick=()=>{if(cidx<f.length-1){cidx++;draw();}else{save(3,true);go('done');}};
+    $('r3btn').onclick=()=>{if(S.crisisCall[s.id])S.crisisCall[s.id].crisis_submitted=new Date().toISOString();if(cidx<f.length-1){cidx++;draw();}else{save(3,true);go('done');}};
     window.setCall=(sid,call)=>{if(!S.crisisCall[sid])S.crisisCall[sid]={call:'',reason:''};S.crisisCall[sid].call=call;saveLocal();draw();};
     updR3Btn();
   }
@@ -912,7 +958,7 @@ window.resetForNexora=function(){
   if(!confirm('This clears your test session so you can run again from scratch. Continue?'))return;
   clearInterval(timerInt);
   const isNex=S.isNexora;
-  S={screen:'home',user:null,savedId:null,detailIdx:0,topAlloc:{},diagnostics:{},expenses:{},y2alloc:{},r2diagnostics:{},crisisCall:{},briefsRead:[],researchSpent:0,extensionCost:0,roundStarted:false,timerEndTime:null,timerTotalSeconds:TIMER_BASE,expWarned:{},isNexora:isNex,pendingExtension:0};
+  S={screen:'home',user:null,savedId:null,detailIdx:0,topAlloc:{},diagnostics:{},expenses:{},y2alloc:{},r2diagnostics:{},crisisCall:{},briefsRead:[],researchSpent:0,extensionCost:0,roundStarted:false,timerEndTime:null,timerTotalSeconds:TIMER_BASE,expWarned:{},isNexora:isNex,pendingExtension:0,phaseTimestamps:{}};
   saveLocal();go('home');
 };
 
