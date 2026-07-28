@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>NEXORA Simulation</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F8F8F7;color:#1a1a1a;font-size:14px}
@@ -64,9 +63,7 @@ details[open] summary{margin-bottom:.5rem}
 <div id="timer-bar">ROUND IN PROGRESS &nbsp;|&nbsp; Time remaining: <span id="timer-display">30:00</span></div>
 <div id="app"></div>
 <script>
-const SB_URL='https://wkrgdznbyfixsilwydob.supabase.co';
-const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indrcmdkem5ieWZpeHNpbHd5ZG9iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNTMwMTYsImV4cCI6MjEwMDcyOTAxNn0.qRa1hvVFwUQmjUMQwkU-0zT3EH0Fzmc6CLk_6H_fWgg';
-const db=supabase.createClient(SB_URL,SB_KEY);
+
 
 const BUDGET_Y1=100000000;
 const BUDGET_Y2_BASE=100000000;
@@ -316,7 +313,7 @@ let S={screen:'home',user:null,savedId:null,detailIdx:0,topAlloc:{},diagnostics:
 function saveLocal(){try{localStorage.setItem('nexora_sim_v3',JSON.stringify(S));}catch(e){}}
 function loadLocal(){try{const d=localStorage.getItem('nexora_sim_v3');if(d){Object.assign(S,JSON.parse(d));return true;}}catch(e){}return false;}
 
-const SHEETS_URL='https://script.google.com/macros/s/AKfycbznExEZxb_DKSHiEU-rv4a5jhoB_8O8bUUs74JClHmwoshP50TPceLc9ZQroCWKTW60Gw/exec'; // Paste your Google Apps Script URL here after setup
+const SHEETS_URL=''; // Paste your Google Apps Script URL here after setup
 
 function toast(msg,type='err'){
   const d=document.createElement('div');
@@ -327,27 +324,20 @@ function toast(msg,type='err'){
   d.textContent=msg;document.body.appendChild(d);setTimeout(()=>d.remove(),6000);
 }
 
-async function save(phase){
+function save(phase){
   saveLocal();
-  const p={name:S.user?.name,roll:S.user?.roll,section:S.user?.section,program:S.user?.program,top_alloc:S.topAlloc,diagnostics:S.diagnostics,expenses:S.expenses,y2alloc:S.y2alloc,r2diagnostics:S.r2diagnostics,crisis_call:S.crisisCall,briefs_read:S.briefsRead,research_spent:S.researchSpent,phase_completed:phase};
-  // Try Supabase
-  try{
-    if(S.savedId){
-      const {error}=await db.from('submissions').update(p).eq('id',S.savedId);
-      if(error)toast('Supabase update error: '+error.message);
-    }else{
-      const {data,error}=await db.from('submissions').insert(p).select();
-      if(error)toast('Supabase save error: '+error.message+'. Please use the download button on completion.');
-      else if(data&&data[0]){S.savedId=data[0].id;saveLocal();toast('Progress saved ✓','ok');}
-    }
-  }catch(e){toast('Connection error — your data is saved locally. Download report at the end.');}
-  // Also try Google Sheets if URL is set
-  if(SHEETS_URL){
-    try{
-      const form=new URLSearchParams();form.append('data',JSON.stringify({...p,roll:S.user?.roll}));
-      fetch(SHEETS_URL,{method:'POST',body:form}).catch(()=>{});
-    }catch(e){}
-  }
+  if(!SHEETS_URL||!S.user)return;
+  const form=new URLSearchParams();
+  form.append('data',JSON.stringify({
+    candidate:{name:S.user.name||'',roll:S.user.roll||'',program:S.user.program||'',section:S.user.section||''},
+    simulation_data:{top_alloc:S.topAlloc,expenses:S.expenses,diagnostics:S.diagnostics,
+      y2alloc:S.y2alloc,r2diagnostics:S.r2diagnostics,crisis_call:S.crisisCall,
+      briefs_read:S.briefsRead,research_spent:S.researchSpent,extension_cost:S.extensionCost,
+      timed_out:false},
+    ai_report:null,phase_completed:phase,is_final:false,
+    submitted_at:new Date().toISOString()
+  }));
+  fetch(SHEETS_URL,{method:'POST',body:form}).catch(()=>{});
 }
 
 let timerInt=null;
@@ -870,35 +860,32 @@ Be direct. Reference specific numbers and decisions from their data. Total lengt
 }
 
 async function generateAndSendReport(isTimedOut){
-  // Runs silently in background — candidate never sees this
+  if(!SHEETS_URL)return;
+  // Send final data to Apps Script — Apps Script calls Gemini and creates the Doc
+  const u=S.user||{};
+  const payload={
+    candidate:{name:u.name||'Unknown',roll:u.roll||'Unknown',program:u.program||'',section:u.section||''},
+    simulation_data:{top_alloc:S.topAlloc,expenses:S.expenses,diagnostics:S.diagnostics,
+      y2alloc:S.y2alloc,r2diagnostics:S.r2diagnostics,crisis_call:S.crisisCall,
+      briefs_read:S.briefsRead,research_spent:S.researchSpent,extension_cost:S.extensionCost,
+      timed_out:isTimedOut||false},
+    report_prompt:buildReportPrompt(isTimedOut),
+    phase_completed:3,is_final:true,
+    submitted_at:new Date().toISOString()
+  };
+  const form=new URLSearchParams();
+  form.append('data',JSON.stringify(payload));
   try{
-    // Step 1: Build AI report via Claude
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1200,messages:[{role:'user',content:buildReportPrompt(isTimedOut)}]})
-    });
-    const d=await resp.json();
-    const report=d.content?.[0]?.text||'Report generation failed';
-    // Step 2: Send everything to Google Apps Script → creates Google Doc + Sheet row
-    if(SHEETS_URL){
-      const payload={
-        candidate:S.user,
-        simulation_data:{top_alloc:S.topAlloc,expenses:S.expenses,diagnostics:S.diagnostics,
-          y2alloc:S.y2alloc,r2diagnostics:S.r2diagnostics,crisis_call:S.crisisCall,
-          briefs_read:S.briefsRead,research_spent:S.researchSpent,extension_cost:S.extensionCost,
-          timed_out:isTimedOut||false},
-        ai_report:report,submitted_at:new Date().toISOString()
-      };
-      const form=new URLSearchParams();form.append('data',JSON.stringify(payload));
-      fetch(SHEETS_URL,{method:'POST',body:form}).catch(()=>{});
-    }
-    // Step 3: If NEXORA tester, show report in admin view
+    const resp=await fetch(SHEETS_URL,{method:'POST',body:form});
+    // For NEXORA: try to show what was sent
     if(S.isNexora){
       const prev=$('nexora-report');
-      if(prev){prev.style.display='block';prev.innerHTML='<h2 style="margin-bottom:.5rem">AI-Generated Evaluation Preview</h2><pre style="white-space:pre-wrap;font-size:12px;line-height:1.7;color:#1a1a1a;background:#F9F9F8;padding:1rem;border-radius:8px;border:1px solid #E5E5E3;overflow:auto;max-height:500px">'+report+'</pre>';}
+      if(prev){
+        prev.style.display='block';
+        prev.innerHTML='<div class="card" style="text-align:left;margin-top:1rem"><h2 style="margin-bottom:.5rem">Data sent to Sheets ✓</h2><p style="font-size:12px;color:#555">The Apps Script will call Gemini and create a Google Doc. Check your Google Sheet for the report link in 10-15 seconds.</p><details style="margin-top:.75rem"><summary style="font-size:12px;color:#4F46E5;cursor:pointer">View prompt that was sent to AI</summary><pre style="white-space:pre-wrap;font-size:11px;line-height:1.6;color:#555;background:#F9F9F8;padding:.75rem;border-radius:6px;margin-top:.5rem;overflow:auto;max-height:300px">'+payload.report_prompt+'</pre></details></div>';
+      }
     }
-  }catch(e){console.error('Report error:',e);}
+  }catch(e){console.error('Send error:',e);}
 }
 
 function drawDone(){
