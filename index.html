@@ -313,7 +313,7 @@ let S={screen:'home',user:null,savedId:null,detailIdx:0,topAlloc:{},diagnostics:
 function saveLocal(){try{localStorage.setItem('nexora_sim_v3',JSON.stringify(S));}catch(e){}}
 function loadLocal(){try{const d=localStorage.getItem('nexora_sim_v3');if(d){Object.assign(S,JSON.parse(d));return true;}}catch(e){}return false;}
 
-const SHEETS_URL='https://script.google.com/macros/s/AKfycbznExEZxb_DKSHiEU-rv4a5jhoB_8O8bUUs74JClHmwoshP50TPceLc9ZQroCWKTW60Gw/exec'; // Paste your Google Apps Script URL here after setup
+const SHEETS_URL='https://script.google.com/macros/s/AKfycbwuGkT80ql0eGsPhv8WveVIrPASTyzPlimqC7wJEnzAfcU1ozTuSGCqQOx2XoL6kMqV/exec'; // Paste your Google Apps Script URL here after setup
 
 function toast(msg,type='err'){
   const d=document.createElement('div');
