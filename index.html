@@ -313,7 +313,7 @@ let S={screen:'home',user:null,savedId:null,detailIdx:0,topAlloc:{},diagnostics:
 function saveLocal(){try{localStorage.setItem('nexora_sim_v3',JSON.stringify(S));}catch(e){}}
 function loadLocal(){try{const d=localStorage.getItem('nexora_sim_v3');if(d){Object.assign(S,JSON.parse(d));return true;}}catch(e){}return false;}
 
-const SHEETS_URL='https://script.google.com/macros/s/AKfycbznExEZxb_DKSHiEU-rv4a5jhoB_8O8bUUs74JClHmwoshP50TPceLc9ZQroCWKTW60Gw/exec'; // Paste your Google Apps Script URL here after setup
+const SHEETS_URL=''; // Paste your Google Apps Script URL here after setup
 
 function toast(msg,type='err'){
   const d=document.createElement('div');
@@ -324,7 +324,7 @@ function toast(msg,type='err'){
   d.textContent=msg;document.body.appendChild(d);setTimeout(()=>d.remove(),6000);
 }
 
-function save(phase){
+function save(phase, isFinal=false){
   saveLocal();
   if(!SHEETS_URL||!S.user)return;
   const form=new URLSearchParams();
@@ -334,7 +334,8 @@ function save(phase){
       y2alloc:S.y2alloc,r2diagnostics:S.r2diagnostics,crisis_call:S.crisisCall,
       briefs_read:S.briefsRead,research_spent:S.researchSpent,extension_cost:S.extensionCost,
       timed_out:false},
-    ai_report:null,phase_completed:phase,is_final:false,
+    report_prompt:isFinal?buildReportPrompt(false):null,
+    phase_completed:phase,is_final:isFinal,
     submitted_at:new Date().toISOString()
   }));
   fetch(SHEETS_URL,{method:'POST',body:form}).catch(()=>{});
@@ -753,7 +754,7 @@ function drawR3Crisis(){
       const ok=d.call&&w>=40;b.disabled=!ok;
       b.textContent=!d.call?'Select a call first':w<40?(40-w)+' more words needed':isLast?'Submit simulation':'Next crisis';
     }
-    $('r3btn').onclick=()=>{if(cidx<f.length-1){cidx++;draw();}else{save(3);go('done');}};
+    $('r3btn').onclick=()=>{if(cidx<f.length-1){cidx++;draw();}else{save(3,true);go('done');}};
     window.setCall=(sid,call)=>{if(!S.crisisCall[sid])S.crisisCall[sid]={call:'',reason:''};S.crisisCall[sid].call=call;saveLocal();draw();};
     updR3Btn();
   }
@@ -904,8 +905,7 @@ function drawDone(){
     :'<div class="card" style="text-align:left;max-width:400px;margin:0 auto">'+
     '<p style="font-size:13px;color:#555;line-height:1.7"><b>What happens next:</b> Team NEXORA has received your submission. Results and next steps will be communicated to you directly. You can close this tab.</p></div>'
   )+'</div>';
-  // Fire-and-forget: generate report in background, send to Sheets/Drive
-  generateAndSendReport(false);
+  // Report already sent via save(3, true) above
 }
 
 window.resetForNexora=function(){
@@ -925,7 +925,7 @@ function drawTimesUp(){
   '<p style="max-width:380px;margin:.75rem auto 1.5rem">Your 30 minutes are up. Whatever decisions you made have been automatically saved and submitted. That\'s the simulation.</p>'+
   '<div class="ibox" style="max-width:420px;margin:0 auto 1rem">Your responses — everything entered so far — have been automatically saved and submitted. Team NEXORA has your data.</div>'+
   '<p class="muted" style="margin-top:1rem">You may close this window.</p></div>';
-  generateAndSendReport(true);
+  save(S.phase_completed||1, true);
 }
 
 function drawAdminLogin(){
@@ -940,9 +940,9 @@ function drawAdminLogin(){
 window.chkAdmin=()=>{if($('apw').value==='NEXORA2025')go('admin');else $('apwerr').textContent='Incorrect password';};
 
 async function drawAdmin(){
-  app().innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem"><h1>Admin Panel</h1><button class="btn btn-g btn-sm" onclick="go(\'home\')">Back to home</button></div><p class="muted">Loading submissions...</p>';
-  try{
-    const res=await db.from('submissions').select('*').order('submitted_at',{ascending:false});
+  app().innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem"><h1>Admin Panel</h1><button class="btn btn-g btn-sm" onclick="go(\'home\')">Back</button></div>'+
+  '<div class="card"><p style="margin-bottom:.75rem">Submissions are now stored in your <b>Google Sheet</b>, not here. Open your Sheet to see all candidate data and report links.</p>'+
+  '<p class="muted">Admin panel no longer connects to Supabase — it was removed. All data goes directly to Google Sheets via the Apps Script.</p></div>';
     const data=res.data||[];
     function dbd(expenses){const t={};DOMAINS.forEach(d=>t[d]=0);STARTUPS.forEach(s=>{const ex=(expenses&&expenses[s.id])||{};Object.entries(ex).forEach(([eid,amt])=>{const exp=EXPENSES.find(e=>e.id===eid);if(exp)t[exp.domain]=(t[exp.domain]||0)+amt;});});return t;}
     let html='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem"><h1>Admin Panel</h1><button class="btn btn-g btn-sm" onclick="go(\'home\')">Back</button></div>'+
@@ -973,7 +973,6 @@ async function drawAdmin(){
       '</div></details></div>';
     });
     app().innerHTML=html;
-  }catch(e){app().innerHTML='<div class="ibox" style="color:#DC2626">Error loading: '+e.message+'</div>';}
 }
 
 function render(){
