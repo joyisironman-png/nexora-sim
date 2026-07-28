@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NEXORA Simulation</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F8F8F7;color:#1a1a1a;font-size:14px}
+#timer-bar{display:none;position:sticky;top:0;background:#1E293B;color:white;text-align:center;padding:7px 12px;font-size:13px;font-weight:600;z-index:100;letter-spacing:.05em}
+#timer-bar.urgent{background:#DC2626;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+#app{max-width:760px;margin:0 auto;padding:1.5rem;min-height:100vh}
+h1{font-size:21px;font-weight:700;margin-bottom:6px}
+h2{font-size:16px;font-weight:700;margin-bottom:6px}
+p{line-height:1.65;color:#444;font-size:13px}
+.card{background:#fff;border:1px solid #E5E5E3;border-radius:10px;padding:1rem 1.25rem;margin-bottom:.75rem}
+.card-hi{border-left:3px solid #4F46E5}
+.btn{padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:opacity .15s;display:inline-block}
+.btn-p{background:#4F46E5;color:#fff}
+.btn-p:disabled{opacity:.35;cursor:not-allowed}
+.btn-g{background:transparent;border:1px solid #D1D1CF;color:#333}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-w{width:100%;display:block;text-align:center;margin-top:.75rem}
+.btn:hover:not(:disabled){opacity:.85}
+.badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;display:inline-block}
+.b-blue{background:#EEF2FF;color:#4F46E5}
+.b-green{background:#ECFDF5;color:#059669}
+.b-red{background:#FEF2F2;color:#DC2626}
+.b-amber{background:#FFFBEB;color:#D97706}
+label{font-size:11px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px}
+input[type=text],input[type=email],input[type=password],select,textarea{width:100%;background:#F9F9F8;border:1px solid #E5E5E3;border-radius:7px;padding:8px 10px;font-size:13px;color:#1a1a1a;outline:none;font-family:inherit}
+input:focus,select:focus,textarea:focus{border-color:#4F46E5}
+input[type=number]{background:#F9F9F8;border:1px solid #E5E5E3;border-radius:6px;padding:5px 8px;font-size:13px;color:#1a1a1a;outline:none;width:75px;text-align:right}
+input[type=range]{width:100%;accent-color:#4F46E5;margin:.5rem 0}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.row{display:flex;align-items:center;gap:10px}
+.tag{font-size:11px;background:#F3F4F6;color:#555;padding:2px 8px;border-radius:4px;display:inline-block;margin:2px}
+hr{border:none;border-top:1px solid #E5E5E3;margin:.75rem 0}
+.domain-hd{font-size:11px;font-weight:700;color:#4F46E5;text-transform:uppercase;letter-spacing:.08em;margin:1rem 0 .4rem;padding-bottom:4px;border-bottom:2px solid #EEF2FF}
+.exp-row{display:flex;align-items:flex-start;gap:10px;padding:.55rem 0;border-bottom:1px solid #F3F4F6}
+.exp-lbl{font-size:13px;font-weight:500;color:#1a1a1a}
+.exp-desc{font-size:11px;color:#888;margin-top:2px}
+.exp-cost{font-size:10px;color:#bbb;margin-top:1px}
+.bb{height:5px;background:#F0F0EE;border-radius:3px;overflow:hidden;margin:.4rem 0}
+.bf{height:100%;border-radius:3px;background:#4F46E5;transition:width .2s}
+.bf.over{background:#DC2626}
+.bf.full{background:#059669}
+.crisis-opt{padding:10px;border-radius:8px;border:1px solid #E5E5E3;cursor:pointer;font-size:13px;transition:all .15s;background:#F9F9F8;margin-bottom:6px}
+.crisis-opt.sel{border-color:#4F46E5;background:#EEF2FF;font-weight:700;color:#4F46E5}
+.ibox{background:#F9F9F8;border:1px solid #E5E5E3;border-radius:8px;padding:.75rem 1rem;font-size:13px;color:#555;line-height:1.6;margin-bottom:.75rem}
+.warn-box{background:#FFFBEB;border:1px solid #FCD34D;border-radius:8px;padding:.75rem 1rem;font-size:13px;color:#92400E;line-height:1.6;margin-bottom:.75rem}
+.profit{color:#059669;font-weight:700}
+.loss{color:#DC2626;font-weight:700}
+.muted{color:#888;font-size:12px}
+details summary{cursor:pointer;font-size:13px;color:#4F46E5;font-weight:600;padding:.4rem 0}
+details[open] summary{margin-bottom:.5rem}
+.timesup-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:999}
+</style>
+</head>
+<body>
+<div id="timer-bar">ROUND IN PROGRESS &nbsp;|&nbsp; Time remaining: <span id="timer-display">30:00</span></div>
+<div id="app"></div>
+<script>
+const SB_URL='https://wkrgdznbyfixsilwydob.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indrcmdkem5ieWZpeHNpbHd5ZG9iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNTMwMTYsImV4cCI6MjEwMDcyOTAxNn0.qRa1hvVFwUQmjUMQwkU-0zT3EH0Fzmc6CLk_6H_fWgg';
+const db=supabase.createClient(SB_URL,SB_KEY);
+
+const BUDGET_Y1=100000000;
+const BUDGET_Y2_BASE=50000000;
+const RESEARCH_COST=1500000;
+const EXT_COST_PER_MIN=5000000;
+const TIMER_BASE=30*60;
+const TIMER_MAX_EXT=15;
+
+const fmt=n=>{if(!n||n===0)return'Rs.0';if(n>=10000000)return'Rs.'+(n/10000000).toFixed(2)+' Cr';if(n>=100000)return'Rs.'+Math.round(n/100000)+'L';return'Rs.'+Math.round(n).toLocaleString('en-IN');};
+const wc=s=>s?s.trim().split(/\s+/).filter(Boolean).length:0;
+const $=id=>document.getElementById(id);
+const app=()=>$('app');
+
+const WHITELIST=["B26015", "B26057", "B26081", "B26105", "B26108", "B26113", "B26127", "B26139", "B26148", "B26152", "B26157", "B26161", "B26166", "B26168", "B26170", "B26175", "B26180", "B26182", "B26188", "B26189", "B26190", "B26206", "B26207", "B26224", "B26226", "B26230", "BI26001", "BI26002", "BI26004", "BI26007", "BI26008", "BI26009", "BL26003", "BL26004", "H26002", "H26003", "H26055", "H26060", "H26065", "H26067", "H26069", "H26074", "H26088", "H26094", "H26109", "H26112", "H26115", "H26126", "H26129", "H26133", "H26138", "H26139", "H26144", "H26145", "H26147", "H26148", "H26154", "H26159", "H26167", "DUMP001", "DUMP002", "DUMP003", "DUMP004", "DUMP005", "DUMP006", "DUMP007", "DUMP008", "DUMP009", "DUMP010", "DUMP011", "DUMP012", "DUMP013", "DUMP014", "DUMP015", "DUMP016", "DUMP017", "DUMP018", "DUMP019", "DUMP020", "DUMP021", "DUMP022", "DUMP023", "DUMP024", "DUMP025"];
+
+const NEXORA_PREFIX='NEXORA';
+
+function validateLogin(roll,email){
+  const r=roll.trim().toUpperCase();
+  const e=email.trim().toLowerCase();
+  if(r.startsWith(NEXORA_PREFIX)){return{valid:true,isNexora:true};}
+  if(!WHITELIST.includes(r)){return{valid:false,reason:'Your roll number ('+roll+') is not on the participant list. Contact Team NEXORA immediately.'};}
+  if(!e.includes('@astra.xlri.ac.in')){return{valid:false,reason:'Please use your XLRI email address ending in @astra.xlri.ac.in'};}
+  if(!e.includes(r.toLowerCase())){return{valid:false,reason:'Your email address does not match your roll number. Your email should contain '+r.toLowerCase()+'@astra.xlri.ac.in'};}
+  return{valid:true,isNexora:false};
+}
+
+const STARTUPS=[
+  {id:'tradetab',name:'TradeTab',sector:'FinTech',stage:'Pre-Launch',founder:'Aryan Mehta',location:'Pune',mrr:'Rs.0',team:'Solo founder',
+   brief:'Replaces the paper ledger that small shop owners use to track who owes them money. 80+ shop owners interviewed. No app built yet.',
+   pitch:'Most small shops — kiranas, stationery stores, medical shops — extend informal credit to regular customers. They track all of this in a paper notebook called a "khata". TradeTab wants to replace this with a mobile app that also helps owners identify which customers are overdue and flags high-risk borrowers. Aryan personally interviewed 80+ shop owners across Pune, and the response was enthusiastic. However, there is no working product — just validated demand and wireframes.',
+   workDone:'80+ in-person interviews with potential customers completed. Basic wireframes of the app designed. No developer hired yet.',
+   roadmap:'Step 1: Hire a developer and build the app. Step 2: Test it with 100 shops. Step 3: Figure out how to earn money — either by charging shops a monthly fee or by selling the credit data to banks.',
+   quote:'"Shop owners are still using paper khata books in 2025. That is a Rs.40,000 Cr problem sitting in plain sight."',
+   signals:['The founder cannot build the product himself — needs to find a developer or technical partner','Demand is confirmed through face-to-face conversations with 80+ potential customers','A well-funded competitor recently entered the same market with a free product']},
+  {id:'medilingo',name:'MediLingo',sector:'HealthTech',stage:'Prototype Stage',founder:'Priya Nair & Dev Sharma',location:'Hyderabad',mrr:'Rs.0',team:'2 co-founders (doctor + engineer)',
+   brief:'A small device for rural doctors that translates what patients say in regional languages and helps suggest what illness they might have. Needs government medical approval before hospitals can use it.',
+   pitch:'In rural India, a doctor may speak Hindi or Telugu while a patient speaks Odia or Bhojpuri. Communication fails, diagnoses get missed, and patients leave sicker than when they arrived. MediLingo is a device that clips onto a doctor\'s coat and translates patient speech across 12 Indian regional languages in real time — while also suggesting what condition the patient might have based on their symptoms. A functioning prototype has been built but the device needs approval from the Central Drugs Standard Control Organisation (India\'s medical device regulator, similar to the FDA) before any hospital can legally use it.',
+   workDone:'A working prototype has been built. The language translation model is being trained. Regulatory filing has not begun.',
+   roadmap:'Step 1: Improve the device accuracy across all 12 languages. Step 2: Get government approval (a 12-24 month process). Step 3: Pilot with 20 primary health centres. Step 4: Raise money for manufacturing at scale.',
+   quote:'"A doctor in Bokaro told me he has seen patients leave undiagnosed because they simply could not communicate. That is what we are solving."',
+   signals:['Building a physical device costs far more upfront than building an app — hardware startups need more capital','Government approval is required before any hospital can legally use the device — this takes 12-24 months','The business model is B2B: selling to hospitals and government health programmes, not directly to patients']},
+  {id:'quizforge',name:'QuizForge',sector:'EdTech',stage:'Pre-Launch',founder:'Ankit Verma',location:'Delhi',mrr:'Rs.0',team:'Solo founder',
+   brief:'Software that coaching centres plug into their system to run online tests and track student progress automatically. The same software could also be sold to companies for employee training tests. Not launched yet.',
+   pitch:'Coaching institutes that prepare students for UPSC, CAT, GMAT and other exams currently use a patchwork of tools — WhatsApp groups, Google Forms, and third-party test software — none of which talk to each other. QuizForge is a single platform that institutes plug directly into their teaching process: students take tests, the software adjusts the difficulty based on how they are doing, and the institute gets a detailed performance dashboard. The same core technology is also being prepared for corporates who want to run training assessments for their employees. One founder is building both, simultaneously.',
+   workDone:'The core testing platform is in development. Three coaching institutes in Delhi have informally said they are interested. No revenue earned yet.',
+   roadmap:'Step 1: Complete and launch the platform for coaching institutes. Step 2: Sign 3 paying institute clients. Step 3: Adapt the same platform for corporate training. Step 4: Expand nationally.',
+   quote:'"Coaching institutes spend Rs.5L a year dealing with question paper leaks. I can eliminate that problem entirely."',
+   signals:['One founder is trying to build for two very different types of customers at the same time — this divides time and focus','Coaching institute demand is confirmed through conversations but no one has paid yet','The corporate training product does not exist yet — only the institute version is being built']},
+  {id:'trailmate',name:'TrailMate',sector:'Travel & Adventure',stage:'Live & Earning',founder:'Neel Kapoor',location:'Bangalore',mrr:'Rs.18,000/month',team:'Solo founder',
+   brief:'A live app where people browse and book weekend outdoor trips — treks, cycling, camping — through verified local operators. Already earning Rs.18,000 per month. Cannot raise investment in its current legal form.',
+   pitch:'Planning a weekend trek in India currently involves calling multiple people, getting inconsistent information, and hoping the operator shows up. TrailMate lets users browse curated outdoor experiences — hikes near Coorg, cycling trails around Rishikesh, camping in Spiti — and book them instantly through the app. The operators are vetted. The app is already live and earning Rs.18,000 per month from commissions. 38% of users who try it return within 7 days — the industry average for similar apps is 20%. The only structural problem: the business is registered as a sole proprietorship, which means Neel owns everything personally and no investor can legally receive shares until he converts it to a Private Limited company.',
+   workDone:'App is live with 40+ experiences listed. Real monthly revenue. Active iteration based on user feedback.',
+   roadmap:'Step 1: Convert the business from a sole proprietorship to a Private Limited company. Step 2: Raise seed funding. Step 3: Expand to 5 cities. Step 4: Launch a certification programme for trek guides.',
+   quote:'"My first hire will not be a developer. The product works. My first hire will be a community manager who turns one-time users into regulars."',
+   signals:['The only startup in this portfolio already making real money from real customers','Cannot raise investment in its current form — legal conversion to Pvt. Ltd. must happen first','A well-funded competitor just entered the same cities with heavy discounts']},
+  {id:'campuskeep',name:'CampusKeep',sector:'E-Commerce',stage:'Concept Stage',founder:'Simran Ahuja',location:'Delhi',mrr:'Rs.0',team:'Solo founder',
+   brief:'An officially licensed merchandise brand for top MBA colleges — mugs, hoodies, notebooks with the college logo. Currently, unofficial sellers on Amazon fill this gap. CampusKeep wants to be the licensed, authentic alternative.',
+   pitch:'Alumni from top MBA programs regularly want to buy merchandise with their college\'s logo — hoodies, mugs, notebooks, keychains. Right now, this demand is served by random sellers on Amazon and Etsy who use unofficial designs and have no relationship with the institution. CampusKeep wants to be the exclusive, officially licensed store for premium B-schools, starting with one institution and expanding to twenty. The business model: sign a licensing deal with the college, pay them a royalty on every sale, and manufacture and sell branded products through an online store and a physical kiosk on campus. One college is close to signing. No products have been manufactured or ordered yet.',
+   workDone:'Business plan completed. One B-school in advanced licensing discussions. No inventory procured. Online store not built.',
+   roadmap:'Step 1: Sign the licensing agreement. Step 2: Order the first batch of products. Step 3: Launch the online store and campus kiosk. Step 4: Use this as a template to sign 19 more institutions.',
+   quote:'"Rs.2 Cr of unofficial MBA college merchandise sells on Amazon every year. None of it is licensed. None of it goes back to the institution. That is the gap."',
+   signals:['Students and alumni are already looking for this product — no expensive advertising needed to create demand','The entire business depends on one thing: getting the college to sign a licensing agreement','No clarity yet on manufacturers, storage, or delivery logistics']},
+  {id:'neuroleap',name:'NeuroLeap',sector:'EdTech / Health',stage:'Concept Stage',founder:'Leena Joseph & Rajeev Pillai',location:'Kochi',mrr:'Rs.0',team:'2 co-founders (educator + AI engineer)',
+   brief:'An AI platform that detects learning difficulties in children (like Dyslexia or ADHD) early and provides personalised practice exercises. Sold to schools, not directly to parents. Currently at the idea stage.',
+   pitch:'About 1 in 5 children has some form of learning difficulty — Dyslexia (trouble reading), Dyscalculia (trouble with numbers), ADHD (attention and focus issues), or others. Most are never formally identified before the age of 12, by which point years of potential early intervention have been wasted. NeuroLeap uses AI to detect these patterns early through a series of assessments and then provides each child with personalised exercises that work around their specific challenge. The platform is sold to schools and therapy centres (not directly to parents), who use it as a diagnostic and support tool. The founders are building a clinical advisory board to ensure the platform meets medical and educational standards.',
+   workDone:'Research and concept fully defined. A team of clinical psychologists being brought in as advisors. No working product yet.',
+   roadmap:'Step 1: Build the detection and assessment tool. Step 2: Get clinical validation from psychologists. Step 3: Pilot with 5 schools. Step 4: Expand the B2B school partnership model across India.',
+   quote:'"Most children with Dyslexia are labelled as slow or lazy before anyone ever checks if something else is going on. By age 12, critical early intervention windows have closed."',
+   signals:['No school or hospital will use an AI tool to assess children without clinical proof that it actually works — this validation takes time and money','Collecting data on children\'s learning and health falls under India\'s new Digital Personal Data Protection Act — compliance is mandatory','Selling to schools (bulk B2B contracts) is more practical than selling to individual parents who may not recognise the problem']},
+];
+
+const EXPENSES=[
+  {id:'dig_ads',domain:'Marketing',label:'Digital advertising',desc:'Run paid ads on Google and Instagram to attract users or business clients',cost:'Rs.2L/month'},
+  {id:'brand_id',domain:'Marketing',label:'Brand identity & design',desc:'Logo, colour palette, website design, and pitch presentation design',cost:'Rs.3L one-time'},
+  {id:'influencer',domain:'Marketing',label:'Creator and influencer partnerships',desc:'Work with relevant creators or micro-influencers to spread awareness',cost:'Rs.5L per campaign'},
+  {id:'pr_media',domain:'Marketing',label:'PR and media coverage',desc:'Get covered in startup publications, newspapers, and industry newsletters',cost:'Rs.4L per quarter'},
+  {id:'events_conf',domain:'Marketing',label:'Events and trade show presence',desc:'Exhibit at industry events, startup showcases, or conferences',cost:'Rs.3L per event'},
+  {id:'sales_hire',domain:'Sales',label:'Hire two sales executives',desc:'Bring on people whose job is to find and close paying clients',cost:'Rs.8L per year each'},
+  {id:'crm_tools',domain:'Sales',label:'Sales software (CRM)',desc:'Tools like HubSpot to track leads, follow-ups, and deal progress',cost:'Rs.2L per year'},
+  {id:'free_pilots',domain:'Sales',label:'Free pilot programme for early clients',desc:'Offer the product free to 10 early clients to prove it works before charging',cost:'Rs.5L total'},
+  {id:'channel_partner',domain:'Sales',label:'Distribution partnerships',desc:'Pay other businesses to sell or promote your product to their clients',cost:'Rs.4L'},
+  {id:'cust_success',domain:'Sales',label:'Client retention manager',desc:'Someone dedicated to ensuring existing clients are happy and renew or upgrade',cost:'Rs.7L per year'},
+  {id:'ca_compliance',domain:'Finance',label:'Accounting and regulatory compliance',desc:'CA firm for GST filing, company registration compliance, annual audit',cost:'Rs.2L per year'},
+  {id:'ip_patent',domain:'Finance',label:'Trademark and patent filing',desc:'Protect the brand name and any unique technology through legal filings',cost:'Rs.3L'},
+  {id:'legal_counsel',domain:'Finance',label:'Legal documentation and contracts',desc:'Lawyer to draft founder agreements, client contracts, and terms of service',cost:'Rs.2L'},
+  {id:'wc_buffer',domain:'Finance',label:'Emergency cash reserve',desc:'Keep 3 months of expenses in reserve in case revenue is delayed',cost:'Rs.10L'},
+  {id:'biz_insurance',domain:'Finance',label:'Business insurance',desc:'Insurance against liability, product failures, and data breaches',cost:'Rs.1L per year'},
+  {id:'office_rent',domain:'Operations',label:'Office space',desc:'Rent a co-working desk or a small dedicated office for the team',cost:'Rs.2L per month'},
+  {id:'equipment',domain:'Operations',label:'Hardware and equipment',desc:'Laptops, servers, lab equipment, testing devices',cost:'Rs.5L'},
+  {id:'cloud_infra',domain:'Operations',label:'Cloud hosting and security',desc:'AWS or Google Cloud to host the product, plus cybersecurity setup',cost:'Rs.3L per year'},
+  {id:'logistics_scm',domain:'Operations',label:'Logistics and supply chain',desc:'Packaging, warehouse, courier partnerships for physical goods',cost:'Rs.4L'},
+  {id:'qa_testing',domain:'Operations',label:'Quality assurance and testing',desc:'Dedicated testers to find bugs or issues before clients do',cost:'Rs.3L'},
+  {id:'tech_hire',domain:'HR',label:'Senior engineering hire',desc:'First technical expert hired beyond the founding team',cost:'Rs.15L per year'},
+  {id:'founder_salary',domain:'HR',label:'Founder salaries',desc:'Minimum monthly pay so founders can commit full-time without financial stress',cost:'Rs.6L per year each'},
+  {id:'esop_pool',domain:'HR',label:'Employee stock option pool',desc:'Set aside equity (not cash) to attract future key hires — standard practice',cost:'Rs.0 cash'},
+  {id:'recruitment',domain:'HR',label:'Recruitment and hiring tools',desc:'Job posting platforms and recruiter agency fees for key hires',cost:'Rs.2L'},
+  {id:'training',domain:'HR',label:'Team training and upskilling',desc:'Workshops, certifications, and courses for the founding team',cost:'Rs.1L'},
+  {id:'espresso',domain:'Culture & Environment',label:'Premium espresso machine',desc:'Because the best startup ideas arrive between the second and third cup',cost:'Rs.0.5L'},
+  {id:'ping_pong',domain:'Culture & Environment',label:'Office ping pong table',desc:'Culture, morale, and the illusion of work-life balance — all in one',cost:'Rs.0.3L'},
+  {id:'team_offsite',domain:'Culture & Environment',label:'Team offsite retreat',desc:'3-day trip for the founding team — Goa, Coorg, your pick',cost:'Rs.1.5L'},
+  {id:'branded_swag',domain:'Culture & Environment',label:'Branded team merchandise',desc:'Hoodies, mugs, tote bags — because every startup needs swag',cost:'Rs.0.5L'},
+  {id:'ergo_chairs',domain:'Culture & Environment',label:'Ergonomic chairs and standing desks',desc:'The founders will sit at these for 14 hours a day — invest accordingly',cost:'Rs.1L'},
+];
+
+const DOMAINS=['Marketing','Sales','Finance','Operations','HR','Culture & Environment'];
+
+const DIAGNOSTICS={
+  tradetab:[
+    {q:'What is TradeTab\'s most critical problem right now?',opts:['The founder cannot build the product himself — there is no developer on the team','The market research is not convincing enough — 80 interviews is not sufficient','The regulatory environment for fintech is too restrictive to launch quickly','The market is too fragmented — small shops are too different from each other to serve at scale','Competition from established players makes the market impossible to enter','The product idea has already been built by others and there is nothing new here']},
+    {q:'Who will pay TradeTab money on Day 1?',opts:['Small shop owners who want a better way to track customer credit','Banks who want data on how reliable small shop customers are as borrowers','End customers who buy on credit from shops','Wholesale distributors who supply to small shops','Accounting software companies who want to white-label the product']},
+    {q:'What is the riskiest assumption in TradeTab\'s plan?',opts:['That shop owners will use an app even if they are not comfortable with technology','That a well-funded competitor will not copy the idea and scale faster','That banks will actually pay for the customer credit data TradeTab generates','That the founder will be able to find and convince a good developer to join at low cost','That shop owners will pay a monthly subscription fee for something they currently do for free']},
+    {q:'What should TradeTab measure most closely in its first 6 months?',opts:['Number of app downloads and installs','Number of shop owners who use the app at least once a week consistently','Revenue from selling credit data to banks','The number of cities the product has been launched in','Social media mentions and press coverage']},
+    {q:'How should TradeTab think about raising money at this stage?',opts:['Bootstrap until a working product is live and tested with real users','Raise angel funding now to hire a developer before building anything','Apply for a government startup grant to avoid giving away equity','Go directly to a top VC with the interview data as proof of concept','Find a corporate investor from the banking or fintech industry']},
+  ],
+  medilingo:[
+    {q:'What is the one thing MediLingo cannot legally do without first completing?',opts:['Registering the company as a Private Limited company','Getting CDSCO medical device approval — the Indian equivalent of FDA clearance','Securing a patent on the translation algorithm','Signing a partnership agreement with a hospital chain','Completing an ISO quality management certification']},
+    {q:'Who actually buys MediLingo and pays for it?',opts:['Rural patients who cannot communicate with doctors','State government health departments and primary health centre networks','Private hospital chains for use in urban specialty clinics','Medical colleges looking for training tools for doctors','Individual patients through a subscription app']},
+    {q:'The device fails accuracy tests for 3 of 12 languages. What is the right call?',opts:['Launch with the 9 working languages and fix the other 3 after getting feedback from real use','Do not launch at all until all 12 languages meet the accuracy standard — this is a medical product','Narrow the product permanently to 6 languages and be the best in those','Work with a language research institute to specifically improve the 3 failing languages','Rebrand as a 9-language product and quietly drop the other 3 from future marketing']},
+    {q:'What is the biggest challenge in scaling MediLingo beyond the prototype?',opts:['Doctors in rural areas are not comfortable using technology','The government approval process takes 12-24 months and consumes cash with no revenue coming in','State governments are slow and unreliable procurement partners','The hardware cost makes each device too expensive for government PHCs to afford','Translation accuracy will deteriorate significantly when used in real noisy clinical environments']},
+    {q:'MediLingo is both hardware and software. What does this mean for the business?',opts:['Hardware makes it harder to raise money because software-focused VCs will not understand it','Hardware makes the business harder to copy — a software competitor cannot easily replicate a physical device','Hardware means the company must raise more money before it earns its first rupee','Hardware requires a manufacturing partner to be in place before Series A fundraising','Hardware and software together gives the product a stronger story with hospital procurement teams']},
+  ],
+  quizforge:[
+    {q:'The biggest risk of QuizForge targeting both coaching institutes and corporate clients simultaneously is:',opts:['Both segments will eventually reject the product for completely different reasons','The founder\'s attention gets split and neither product is built well enough to compete','The corporate market will copy the institute product and build it cheaper in-house','Coaching institutes are a shrinking market that will not sustain a viable business','It becomes impossible to price the product correctly for two segments with very different budgets']},
+    {q:'If you had to pick one segment for QuizForge to focus on first, which would it be?',opts:['Coaching institutes — they have a very specific problem and will give fast, clear feedback','Corporate L&D — bigger deal sizes and multi-year contracts make the business more stable','Both at the same time — the platform is shared so data from both segments speeds up learning','Government education clients — more stable and recurring than either private segment','International markets — far less competition for AI-adaptive test platforms outside India']},
+    {q:'A coaching institute agrees to pay Rs.1.5L for a pilot but wants a feature that is not on the roadmap. What should QuizForge do?',opts:['Build the feature immediately — a paying customer is always right and the money proves it','Decline and stick to the roadmap — early customisation is a trap that will slow down the product','Accept the pilot but be explicit that the feature will come later — use the pilot to learn, not to build','Charge extra specifically for the custom feature and use the revenue to hire someone to build it','Find a freelance developer to build the feature fast so the core team is not distracted']},
+    {q:'QuizForge\'s most defensible advantage over existing test platforms like Google Forms or Mettl is:',opts:['Lower price than everything currently on the market','The AI that adjusts question difficulty in real time based on how the student is performing','An offline version that works in locations with poor internet connectivity','A version available in regional Indian languages','A better mobile app experience compared to legacy desktop-only tools']},
+    {q:'How should QuizForge structure its pricing for coaching institutes in Year 1?',opts:['Charge a monthly fee per student using the platform (like a SaaS subscription)','Charge a one-time setup and licence fee per institute','Take a percentage of the student fees collected by the institute','Make the basic version free and charge for advanced analytics and reporting','Free for small institutes under 200 students, paid for larger ones']},
+  ],
+  trailmate:[
+    {q:'TrailMate has real revenue and strong repeat usage. What is its single greatest vulnerability?',opts:['The product quality is not actually good enough to compete with a well-funded rival','A venture-funded competitor can enter with heavy discounts and outlast TrailMate financially','The outdoor adventure market is too seasonal to sustain revenue through the whole year','The founder has no technical skills and cannot improve the product without external help','Without a proper company structure, the business cannot sign contracts with enterprise clients']},
+    {q:'TrailMate is still registered as a sole proprietorship. Why is this a critical issue for growth?',opts:['Sole proprietorships cannot legally open a current account with a business bank','Investors cannot receive equity in a sole proprietorship — the company must first convert to a Private Limited','Sole proprietorships pay substantially higher taxes on every rupee of revenue','There is no practical difference at this stage — structure can be fixed later when needed','Sole proprietorships cannot sign contracts with large travel companies or aggregators']},
+    {q:'Summit Adventures enters with Rs.500 off coupons and TrailMate loses 18% of weekly bookings. What should TrailMate do in Year 1?',opts:['Match the discount — if Summit is giving Rs.500 off, TrailMate has to stay price competitive','Do not match discounts — invest in building a community of loyal adventurers that price alone cannot pull away','Launch a loyalty programme where repeat users get priority access, exclusive experiences, and discounts','Raise prices and position TrailMate as the premium quality option versus Summit\'s budget approach','Partner with outdoor gear brands to create bundled offers that Summit cannot replicate easily']},
+    {q:'Neel says his first hire will be a community manager, not a developer. Do you agree with this priority?',opts:['Yes — the product is working and community is now the key to retaining and growing the user base','No — the product still has reliability and feature gaps that will cost users if not fixed by an engineer','Yes — at Rs.18K MRR the growth flywheel is driven by word of mouth, which community accelerates','No — a business development hire to sign more adventure operators is more urgent than community','It depends entirely on what Summit\'s entry has done to retention numbers — check that first']},
+    {q:'What should TrailMate\'s expansion strategy look like in Year 1?',opts:['Stay deep in Bangalore before attempting any new city','Simultaneously launch in 3 cities to signal momentum to potential investors','Focus specifically on Rishikesh as the highest-intent outdoor adventure destination in India','Stop geographic expansion entirely and focus on improving the quality of operators on the platform','Build a guide and operator certification programme before expanding into any new market']},
+  ],
+  campuskeep:[
+    {q:'CampusKeep\'s core advantage over the Amazon and Etsy sellers currently filling this market is:',opts:['Lower prices — CampusKeep can undercut the competition by buying in bulk','Official licensed merchandise — only CampusKeep has the college\'s permission to use its brand and logo','Better website and faster delivery than informal online sellers','Strong social media presence and student ambassador networks inside campuses','Exclusive designs created in genuine collaboration with students and alumni associations']},
+    {q:'What is the single dependency that CampusKeep absolutely cannot move without?',opts:['A great e-commerce website and mobile app','The signed licensing agreement from the institution — nothing else can happen without this','Venture capital or angel investment to fund the first inventory order','10,000 social media followers before the launch date','Signed agreements with 5 alumni associations as distribution partners']},
+    {q:'An Etsy seller is selling near-identical merchandise at 50% lower prices. What is the right strategic response?',opts:['File a trademark or copyright infringement notice against the Etsy seller immediately','Use this as urgency to close the licensing agreement faster — the official stamp is what defeats copies','Match prices and compete on delivery speed and product quality','Ignore the Etsy seller entirely — once officially licensed, the authentic product sells itself to people who care','Partner with the institution to publicly endorse CampusKeep as the only legitimate official store']},
+    {q:'Which existing business model is CampusKeep most similar to?',opts:['A D2C fashion brand that designs, manufactures, and sells directly to consumers','A franchise and licensing model — like how a McDonald\'s franchisee pays for the right to use the brand','A subscription merchandise box where customers pay monthly to receive curated college items','A B2B wholesale distributor that sells to campus bookstores and gift shops','A marketplace platform that connects independent merchandise sellers with college buyers']},
+    {q:'What should CampusKeep do first with its initial capital?',opts:['Build a beautiful e-commerce website and app before anything else','Lock in the licensing agreement — invest in legal and relationship-building until the contract is signed','Buy the first batch of inventory and test whether demand is real before spending on technology','Hire a campus sales team to build relationships with student governments and alumni bodies','Run a crowdfunding pre-sale to validate demand and raise inventory capital simultaneously']},
+  ],
+  neuroleap:[
+    {q:'Why is clinical validation by certified psychologists non-negotiable before NeuroLeap can approach schools?',opts:['SEBI and RBI regulations require it for any edtech company raising investment','Schools and parents will not trust or use an AI tool that diagnoses children without independent proof it works','The technology simply cannot function without having been trained on clinical case data first','Only government schools require clinical validation — private schools can onboard without it','The founders personally feel it is the ethical thing to do before going to market']},
+    {q:'Who is the most realistic first paying customer for NeuroLeap?',opts:['Parents who download the app from the App Store for their child at home','Schools and special education departments who buy a batch licence for all students','Government programmes to deploy the tool in public schools at scale','Hospital paediatric departments who want a new diagnostic tool for their clinics','Parent Facebook groups and WhatsApp communities who spread it through word of mouth']},
+    {q:'India\'s new Digital Personal Data Protection Act (DPDP 2023) requires explicit parental consent before collecting data on anyone under 18. What does this mean for NeuroLeap?',opts:['NeuroLeap must build a parent consent system into the product before any data can be collected','The law only applies to consumer apps — a B2B school product is exempt from these requirements','NeuroLeap should operate in stealth until the law\'s implementation guidelines are clearer','The school signs consent forms on behalf of parents, so the burden is on the institution not the startup','This regulation makes NeuroLeap\'s business model impossible to execute in India']},
+    {q:'Should NeuroLeap be structured as a for-profit startup or a social enterprise?',opts:['For-profit — the social impact framing is for marketing, but the structure should maximise investor returns','A Section 8 company (non-profit) to access CSR funding and government grants','A hybrid: for-profit entity with a separate CSR arm for government school outreach','Get impact fund investment first, then transition to a commercial structure once clinical validation exists','The question of structure should be decided after the first school pilot results are in']},
+    {q:'Apollo Hospitals wants to run a paid pilot if NeuroLeap has clinical validation. What should Year 1 capital prioritise?',opts:['Clinical validation — it unlocks the Apollo deal and makes everything else possible','Split between clinical validation and building the actual product in parallel to save time','Negotiate with Apollo to let NeuroLeap start a smaller pilot without full validation as a starting point','Bring in a clinical research organisation (CRO) to run the validation faster using professional expertise','Focus on the 12-school chain that expressed interest instead — they need less regulatory documentation']},
+  ],
+};
+
+const R2_QUESTIONS={
+  tradetab:[
+    {q:'KhaataBook entered your market during Year 1 with door-to-door agents, free trials, and significant funding. TradeTab still has limited product to show. What is your Year 2 priority for TradeTab?',opts:['Pivot to a narrow segment of the SMB market that KhaataBook is not focused on — e.g. medical shops or hardware stores','Accelerate product delivery aggressively — something live and in customers\' hands beats a perfect product that does not exist','Explore whether a white-label deal or partnership with KhaataBook might be smarter than competing directly','Accept that this market is too difficult now and redirect Year 2 capital to other ventures in the portfolio','Dominate one specific city or district where KhaataBook has not yet deployed agents']},
+    {q:'TradeTab\'s founder is offered an acquisition by a fintech payments company — the founding team gets absorbed as employees and you receive 40 paise for every rupee invested. What is your recommendation?',opts:['Reject — the product and niche pivot still have enough runway to justify continuing independently','Accept — KhaataBook\'s entry has fundamentally changed the risk and return calculation for TradeTab','Negotiate hard for 65-70 paise before making a final decision','Ask for 3 more months to see whether the product launch changes the competitive situation','This decision should rest entirely with the founder based on their personal financial circumstances']},
+  ],
+  medilingo:[
+    {q:'A government fast-track certification programme has opened for MediLingo — but it requires a working prototype to be submitted within the next quarter. How should Year 2 capital be allocated?',opts:['All capital goes to completing the prototype in time — this regulatory shortcut is worth every rupee','Split between finishing the prototype and building early relationships with hospital procurement teams','Bring in a hardware manufacturing partner to co-develop and accelerate the prototype timeline','Pursue standard certification at the normal pace — rushing risks product quality on a medical device','Try to negotiate a 60-day deadline extension with the government before committing capital to the sprint']},
+    {q:'MediLingo failed accuracy tests for 3 of 12 languages. Should Year 2 launch proceed with 9 working languages or wait for all 12?',opts:['Launch with 9 — every month of delay costs money and market position','Wait for all 12 — a medical device that is partially inaccurate is a liability, not an asset','Partner with a language research institution specifically for the 3 failing languages before launching','Permanently reframe the product as a 9-language device and invest the saved resources elsewhere','Commission a study to understand how often these 3 specific languages come up in the target rural markets']},
+  ],
+  quizforge:[
+    {q:'Two institutes are willing to pay for a pilot but need a specific feature not on the current roadmap. Year 2 decision?',opts:['Build the feature — a paying pilot justifies changing the roadmap','Decline and hold the roadmap — customisation requests from early clients are a common trap for SaaS startups','Accept one pilot as a learning exercise with a very clear caveat on the feature timeline','Charge a separate feature development fee and use that revenue to fund the build','Hire a contract developer just for this feature so the core team stays on the original plan']},
+    {q:'The corporate L&D module is still not built while the institute product is close to launch. What does QuizForge do in Year 2?',opts:['Shut down the corporate module planning entirely — prove the institute model first before expanding scope','Keep both streams active — the platform is the same underlying code so the marginal effort is limited','Hire a dedicated business development person to explore corporate clients while the founder focuses on the institute product','Use the institute launch as a real-world reference case to pitch corporates in Year 2 — sequence them, do not run them in parallel','Spin out the corporate module into a separate legal entity with a different co-founder who owns it']},
+  ],
+  trailmate:[
+    {q:'Summit Adventures is funded and aggressive. TrailMate has Rs.22,000 in personal runway and no proper company structure yet. What is Year 2\'s first action?',opts:['Incorporate as a Private Limited company immediately — this is the single most important action before anything else','Raise a bridge loan from friends or family to survive while the incorporation paperwork is completed','Use Year 2 capital entirely on community marketing to deepen the loyalty moat before Summit gains ground','Consider accepting Summit\'s earlier acquisition offer — the funding gap may be too large to overcome','Lead with the retention data in investor conversations before doing anything else — prove the unit economics first']},
+    {q:'TrailMate\'s 38% Day-7 retention is double the industry benchmark. How does this metric get used in Year 2?',opts:['It is the centrepiece of every investor conversation — retention proves product-market fit better than revenue at this stage','Do not publicise it until the company is properly incorporated — premature attention creates competitive risk','Use it as the basis for a premium pricing test — strong retention suggests users see high value','The retention data is only meaningful if it holds up after Summit\'s discount campaign — validate this first','Retention is a product metric, not a business metric — focus conversations with investors on revenue growth']},
+  ],
+  campuskeep:[
+    {q:'The B-school has given CampusKeep 30 days to prove inventory capability or the licensing deal is off. How does Year 2 capital get deployed?',opts:['Pre-order the first batch of inventory now to show the institution it is real and serious','Show the institution a signed manufacturer agreement and a warehouse booking — proof of capability without actual stock','Request a 60-day extension to do the procurement properly without shortcuts','Walk away if they will not extend — a deal that requires rushing into Rs.10L of inventory on a 30-day deadline is too risky','Present a detailed launch plan with a limited edition initial run of 3 products as a proof of concept']},
+    {q:'CampusKeep has one near-signed deal. Should Year 2 focus on closing this deal perfectly or start approaching other institutions simultaneously?',opts:['Close this one deal perfectly first — one strong reference is worth more than five weak pipelines','Approach 5 more institutions immediately — having multiple deals in pipeline protects against this one falling through','Build the digital platform and online store first so you can onboard institutions rapidly once more deals close','Partner with a B-school federation or alumni network body to approach multiple institutions simultaneously','Use this near-closed deal as leverage to raise venture capital for a full national rollout']},
+  ],
+  neuroleap:[
+    {q:'Apollo Hospitals will pay Rs.3.2L for a pilot if clinical validation exists. Where does Year 2 capital go first?',opts:['100% to clinical validation — the Apollo deal revenue alone makes this the highest-return investment','Split evenly between clinical validation and building the actual detection platform in parallel','Negotiate with Apollo to co-fund the clinical validation as part of the pilot agreement — share the cost','Bring in a clinical research organisation to run the validation professionally and faster than doing it in-house','Pursue the 12-school chain instead — they need less documentation and represent faster revenue']},
+    {q:'NCPCR received a complaint about NeuroLeap\'s data practices with children. Year 2 compliance strategy?',opts:['Hire a data privacy lawyer immediately and rebuild the consent and data collection flows before any further deployment','Engage proactively with NCPCR, offer a voluntary audit, and demonstrate full transparency — get ahead of it','Pause all school pilots until the DPDP Act implementation guidelines for children\'s data become clearer','Hire a co-founder specifically with a legal or compliance background to permanently own this function','Build an explicit parental consent management system directly into the product as a core user-facing feature']},
+  ],
+};
+
+const Y1_OUTCOMES={
+  tradetab:{good_domains:['Operations','HR'],base_mult:0.45,max_mult:0.82,
+    good:'Your investment helped TradeTab find a technical co-founder and build a working MVP. KhaataBook entered the market but TradeTab now has a differentiated product focused on credit features specific to kirana shops. Currently in beta with 12 shop owners.',
+    bad:'Without a product to show, your capital was burned on a market that a well-funded competitor had already entered. Aryan is still at the wireframe stage. KhaataBook has onboarded the same shop owners he researched.'},
+  medilingo:{good_domains:['Finance','Operations'],base_mult:0.55,max_mult:1.42,
+    good:'Your investment helped MediLingo secure government medical device certification and enter the fast-track rural health programme. Five primary health centres are now piloting the device. Clinical data is accumulating and the business model is validating.',
+    bad:'Without investment in compliance and regulatory processes, MediLingo missed the fast-track window and could not get certified. No hospital can legally use the device. The prototype remains in the lab with no clear path to revenue.'},
+  quizforge:{good_domains:['Operations','HR'],base_mult:0.5,max_mult:1.48,
+    good:'QuizForge delivered the paid pilot for two coaching institutes and earned Rs.2L in revenue. There is now a waiting list of six more institutes. Product-market fit is confirmed in the coaching segment.',
+    bad:'Splitting focus between two customer segments meant QuizForge delivered well for neither. The missing feature cost them the pilot deal. Minimal revenue. The founder is now questioning whether to abandon one segment entirely.'},
+  trailmate:{good_domains:['Marketing','Sales'],base_mult:0.75,max_mult:1.72,
+    good:'Investment in community and marketing created a loyal user base that resisted Summit Adventures\' discount campaign. Monthly revenue grew from Rs.18K to Rs.42K. Strong word-of-mouth in Bangalore and Rishikesh is compounding.',
+    bad:'Without community investment, users switched to Summit Adventures for the Rs.500 coupon. Monthly revenue dropped from Rs.18K to Rs.9K. Neel is under significant personal financial pressure with no incorporation completed.'},
+  campuskeep:{good_domains:['Finance','Operations'],base_mult:0.35,max_mult:1.28,
+    good:'CampusKeep secured the licensing deal and launched the first campus kiosk. First quarter revenue of Rs.85K driven by an alumni reunion event. A pipeline of three more institutions is being built.',
+    bad:'Without legal and operational investment, the 30-day licensing deadline was missed. No inventory was ready to demonstrate. The B-school moved on and a competitor launched an unofficial store on campus instead.'},
+  neuroleap:{good_domains:['HR','Finance'],base_mult:0.4,max_mult:1.45,
+    good:'Clinical validation was completed with the advisory board. Apollo Hospitals signed the pilot agreement and paid Rs.3.2L. The 12-school chain is in final MoU discussions. DPDP compliance was built in from day one.',
+    bad:'Without clinical validation and legal investment, the Apollo deal fell through. A complaint to the data protection authority added regulatory risk. The school pilot was suspended. The platform remains at the concept stage.'},
+};
+
+function calcY1Return(sid){
+  const invested=S.topAlloc[sid]||0;
+  if(!invested)return null;
+  const expenses=S.expenses[sid]||{};
+  const totalExp=Object.values(expenses).reduce((a,b)=>a+b,0);
+  const outcome=Y1_OUTCOMES[sid];
+  if(!totalExp)return{invested,returned:Math.round(invested*outcome.base_mult*0.5),profit:0,isGood:false,narrative:outcome.bad};
+  const domainSpend={};DOMAINS.forEach(d=>domainSpend[d]=0);
+  Object.entries(expenses).forEach(([eid,amt])=>{const exp=EXPENSES.find(e=>e.id===eid);if(exp)domainSpend[exp.domain]=(domainSpend[exp.domain]||0)+amt;});
+  const goodTotal=outcome.good_domains.reduce((a,d)=>a+(domainSpend[d]||0),0);
+  const goodRatio=totalExp>0?goodTotal/totalExp:0;
+  const isGood=goodRatio>=0.38;
+  const mult=isGood?outcome.base_mult+(outcome.max_mult-outcome.base_mult)*Math.min(1,goodRatio*1.4):outcome.base_mult*(0.25+goodRatio*0.6);
+  const returned=Math.round(invested*mult);
+  return{invested,returned,profit:returned-invested,isGood,narrative:isGood?outcome.good:outcome.bad};
+}
+
+function calcY2Budget(){
+  const totalInvested=Object.values(S.topAlloc).reduce((a,b)=>a+b,0);
+  const spentFromY1=S.researchSpent+(S.extensionCost||0)+totalInvested;
+  const unspent=Math.max(0,BUDGET_Y1-spentFromY1);
+  let profits=0;
+  STARTUPS.forEach(s=>{const r=calcY1Return(s.id);if(r&&r.profit>0)profits+=r.profit;});
+  return BUDGET_Y2_BASE+unspent+profits;
+}
+
+const EVENTS={
+  tradetab:{badge:'Competitive shock',body:'KhaataBook — a Bangalore FinTech with Rs.25 Cr in venture funding — has launched a credit-tracking product for small shop owners in Pune and Mumbai. They are running free door-to-door agent onboarding for 6 months.',implication:'TradeTab has no live product yet. The same customers Aryan interviewed are now being onboarded by a funded and organised competitor.'},
+  medilingo:{badge:'Regulatory opportunity',body:'The Union Health Ministry announced a fast-track medical device certification programme for AI health tools targeting rural primary care. The process is 40% faster than standard government approval but requires a working prototype submitted within the current quarter.',implication:'A significant regulatory shortcut has opened. The critical question is whether the prototype is ready in time to apply.'},
+  quizforge:{badge:'Revenue signal',body:'Two Delhi coaching institutes sent formal interest in a paid pilot worth Rs.1.5L combined. They want one specific feature not on the current roadmap: questions that automatically adjust difficulty based on how each student is performing in real time.',implication:'Real revenue is within reach — but it requires building something that was not planned. QuizForge must decide whether to follow the customer or the roadmap.'},
+  trailmate:{badge:'Competitor escalation',body:'Summit Adventures launched in Bangalore and Rishikesh with a Rs.500 discount coupon campaign targeting TrailMate\'s core cities. TrailMate\'s weekly booking numbers have dropped 18% over the past two weeks.',implication:'TrailMate has stronger product metrics but Summit has deeper capital. This is now a test of whether loyalty or price wins in an early market.'},
+  campuskeep:{badge:'Licensing signal',body:'A top-5 MBA institution agreed to enter exclusive licensing discussions. Terms: 10% royalty on sales, a physical kiosk in the main lobby. They want a decision in 30 days and are asking for proof that CampusKeep can actually deliver inventory.',implication:'The entire CampusKeep thesis just became real — but the timeline is tight and no products have been manufactured or sourced yet.'},
+  neuroleap:{badge:'Enterprise signal',body:'A chain of 12 private schools expressed interest in piloting NeuroLeap\'s learning difficulty detection module across 400 students. They are willing to pay Rs.800 per student assessment if a peer-reviewed clinical validation report exists.',implication:'Rs.3.2L in immediate revenue is on the table. Clinical validation is now the only thing standing between NeuroLeap and its first paying customer.'},
+};
+
+const CRISES={
+  tradetab:{title:'The copycat',body:'KhaataBook\'s agents personally signed up 3 shop owners who had told Aryan during his research that they would definitely use TradeTab first. A fourth shop owner is now asking for a feature-by-feature comparison before deciding. TradeTab still does not have a working product to show.'},
+  medilingo:{title:'Prototype failure',body:'Independent accuracy testing shows MediLingo\'s AI fails for 3 of 12 supported languages — including Odia and Bhojpuri. Fixing it requires retraining the model on 10 times more data. The additional cost is estimated at Rs.18L. The founders have Rs.6L left in personal savings.'},
+  quizforge:{title:'The paid distraction',body:'A corporate training firm has offered Ankit Rs.8L as a consulting contract to build their internal assessment tool — completely unrelated to coaching institutes and not on any roadmap. Accepting means pausing QuizForge development for at least 3 months.'},
+  trailmate:{title:'The acquisition offer',body:'Summit Adventures privately approached Neel with an acquisition offer: Rs.2 Cr for 65% of the business. The offer expires in 5 days. Neel has Rs.22,000 left in personal savings and has not yet converted the business to a Private Limited company.'},
+  campuskeep:{title:'The unofficial competitor',body:'An Etsy seller has started listing near-identical B-school branded merchandise at 50% lower prices, with faster delivery, and is now appearing higher than CampusKeep in search results. They use unofficial logos and state no institutional affiliation.'},
+  neuroleap:{title:'The compliance notice',body:'A parents\' group filed a formal complaint with India\'s data protection authority alleging that NeuroLeap\'s school pilot collected children\'s cognitive assessment data without properly completing the consent requirements under the DPDP Act 2023. A formal written response is required within 14 days or the pilot must be suspended immediately.'},
+};
+
+let S={screen:'home',user:null,savedId:null,detailIdx:0,topAlloc:{},diagnostics:{},expenses:{},y2alloc:{},r2diagnostics:{},crisisCall:{},briefsRead:[],researchSpent:0,extensionCost:0,roundStarted:false,timerStarted:null,timerTotalSeconds:TIMER_BASE,expWarned:{},isNexora:false,};
+
+function saveLocal(){try{localStorage.setItem('nexora_sim_v3',JSON.stringify(S));}catch(e){}}
+function loadLocal(){try{const d=localStorage.getItem('nexora_sim_v3');if(d){Object.assign(S,JSON.parse(d));return true;}}catch(e){}return false;}
+
+async function save(phase){
+  saveLocal();
+  try{
+    const p={name:S.user?.name,roll:S.user?.roll,section:S.user?.section,program:S.user?.program,email:S.user?.email,top_alloc:S.topAlloc,diagnostics:S.diagnostics,expenses:S.expenses,y2alloc:S.y2alloc,r2diagnostics:S.r2diagnostics,crisis_call:S.crisisCall,briefs_read:S.briefsRead,research_spent:S.researchSpent,phase_completed:phase,is_nexora:S.isNexora};
+    if(S.savedId){await db.from('submissions').update(p).eq('id',S.savedId);}
+    else{const {data,error}=await db.from('submissions').insert(p).select();if(error)console.error('SB:',error);if(data&&data[0])S.savedId=data[0].id;saveLocal();}
+  }catch(e){console.error(e);}
+}
+
+let timerInt=null;
+function getRem(){if(!S.timerStarted)return S.timerTotalSeconds;return Math.max(0,S.timerTotalSeconds-Math.floor((Date.now()-S.timerStarted)/1000));}
+function fmtTime(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+
+function startCountdown(){
+  if(timerInt)clearInterval(timerInt);
+  const tb=$('timer-bar');if(tb)tb.style.display='block';
+  timerInt=setInterval(()=>{
+    const rem=getRem();
+    const td=$('timer-display');if(td)td.textContent=fmtTime(rem);
+    const tb2=$('timer-bar');
+    if(tb2){if(rem<300)tb2.classList.add('urgent');else tb2.classList.remove('urgent');}
+    if(rem<=0){clearInterval(timerInt);save(S.phase_completed||1);go('timesup');}
+  },1000);
+  const td=$('timer-display');if(td)td.textContent=fmtTime(getRem());
+}
+
+function go(screen){S.screen=screen;saveLocal();render();}
+window.go=go;
+
+const funded=()=>STARTUPS.filter(s=>(S.topAlloc[s.id]||0)>0);
+
+function drawHome(){
+  app().innerHTML='<div style="text-align:center;padding:2.5rem 0">'+
+  '<div style="font-size:11px;font-weight:700;letter-spacing:.12em;color:#4F46E5;text-transform:uppercase;margin-bottom:.5rem">NEXORA x XCEED</div>'+
+  '<h1 style="margin-bottom:.25rem;font-size:24px">Investment Simulation</h1>'+
+  '<p style="margin:.25rem auto 1.5rem;max-width:340px;color:#666">A multi-stage business decision challenge</p>'+
+  '<div class="card" style="max-width:480px;margin:0 auto 1.25rem;text-align:left">'+
+  '<details><summary>How this works</summary>'+
+  '<p style="margin-bottom:.5rem">You will be presented with a set of early-stage businesses. For each, you will have to decide how to allocate resources, respond to information as it arrives, and make judgement calls when things go wrong.</p>'+
+  '<p style="margin-bottom:.5rem">There are no objectively correct answers here. What you choose matters less than why you choose it and how you adapt when circumstances change.</p>'+
+  '<p>The simulation runs in stages. Once you begin, you cannot go back. Read each opportunity carefully before committing resources.</p>'+
+  '</details></div>'+
+  '<button class="btn btn-p" style="padding:11px 32px;font-size:14px" onclick="go(\'register\')">Enter as candidate</button>'+
+  '<br><br><button class="btn btn-g btn-sm" onclick="go(\'adminlogin\')">Admin panel</button></div>';
+}
+
+function drawRegister(){
+  app().innerHTML='<div style="max-width:440px;margin:2rem auto">'+
+  '<button class="btn btn-g btn-sm" onclick="go(\'home\')" style="margin-bottom:1rem">Back</button>'+
+  '<h1 style="margin-bottom:.25rem">Candidate Registration</h1>'+
+  '<p style="margin-bottom:1rem;color:#666">Your roll number and email address must match the records submitted during NEXORA registration.</p>'+
+  '<div class="card"><div style="display:flex;flex-direction:column;gap:14px">'+
+  '<div><label>Full name</label><input type="text" id="rn" placeholder="As per XLRI records"></div>'+
+  '<div><label>Roll number</label><input type="text" id="rr" placeholder="e.g. B26190 or H26115"></div>'+
+  '<div><label>Programme</label><select id="rp"><option value="">Select your programme</option><option value="BM">BM — Business Management</option><option value="HRM">HRM — Human Resource Management</option><option value="IB">IB — International Business</option><option value="LSCM">LSCM — Logistics & Supply Chain Management</option></select></div>'+
+  '<div><label>Section</label><select id="rs"><option value="">Select section</option><option>A</option><option>B</option><option>C</option><option selected>D</option></select></div>'+
+  '<div><label>XLRI Email address</label><input type="email" id="re" placeholder="rollnumber@astra.xlri.ac.in"></div>'+
+  '<div id="reg-err" style="color:#DC2626;font-size:12px;display:none;padding:8px;background:#FEF2F2;border-radius:6px;line-height:1.5"></div>'+
+  '<button class="btn btn-p btn-w" onclick="doRegister()">Verify and proceed</button>'+
+  '</div></div>'+
+  '<p style="font-size:11px;color:#aaa;text-align:center;margin-top:.75rem">If you are unable to log in, contact Team NEXORA immediately for assistance.</p></div>';
+}
+window.doRegister=function(){
+  const n=$('rn').value.trim(),r=$('rr').value.trim(),p=$('rp').value,s=$('rs').value,e=$('re').value.trim();
+  const errEl=$('reg-err');
+  if(n.length<2||!r||!p||!s||!e){errEl.style.display='block';errEl.textContent='Please fill in all fields.';return;}
+  const result=validateLogin(r,e);
+  if(!result.valid){errEl.style.display='block';errEl.textContent=result.reason+'\n\nIf you believe this is an error, please contact Team NEXORA immediately via WhatsApp or email.';return;}
+  errEl.style.display='none';
+  S.user={name:n,roll:r.toUpperCase(),section:s,program:p,email:e.toLowerCase()};
+  S.isNexora=result.isNexora;
+  saveLocal();go('timerinfo');
+};
+
+function drawTimerInfo(){
+  const extMins=S.pendingExtension||0;
+  const extCost=extMins*EXT_COST_PER_MIN;
+  const totalTime=TIMER_BASE+extMins*60;
+  app().innerHTML='<div style="max-width:520px;margin:0 auto;padding:1.5rem 0">'+
+  (S.isNexora?'<div class="ibox" style="border-left:3px solid #4F46E5;margin-bottom:1rem">NEXORA Internal Test Mode — responses will be marked separately</div>':'')+
+  '<h1 style="margin-bottom:.5rem">Before you begin</h1>'+
+  '<div class="card" style="margin-bottom:1rem">'+
+  '<div style="font-size:32px;font-weight:800;color:#4F46E5;text-align:center;padding:.5rem 0">30:00</div>'+
+  '<p style="text-align:center;margin-bottom:.75rem">You have <b>30 minutes</b> to complete the entire simulation.</p>'+
+  '<p style="text-align:center;margin-bottom:.75rem">The timer starts the moment you click the button below. It runs continuously. There is no pause.</p>'+
+  '<p style="text-align:center;color:#DC2626;font-weight:600;font-size:13px">When time runs out, the simulation ends automatically.</p>'+
+  '</div>'+
+  '<div class="card" style="margin-bottom:1rem;border-color:#F59E0B">'+
+  '<h2 style="margin-bottom:.5rem">Need more time?</h2>'+
+  '<p style="margin-bottom:.75rem">You can purchase up to <b>15 extra minutes</b> — but each additional minute costs <b>Rs.50 Lakhs</b> deducted from your investment budget.</p>'+
+  '<p style="margin-bottom:.75rem;font-size:12px;color:#777">15 extra minutes = Rs.750L less to invest. Think carefully about whether the time is worth the money.</p>'+
+  '<label>Extra minutes to purchase (0 to 15)</label>'+
+  '<input type="range" id="ext-slider" min="0" max="15" value="'+(S.pendingExtension||0)+'" oninput="updExt(this.value)">'+
+  '<div class="g3" style="margin-top:.5rem">'+
+  '<div style="text-align:center"><div style="font-size:11px;color:#888">Extra minutes</div><div style="font-size:18px;font-weight:700;color:#4F46E5" id="ext-mins">'+extMins+'</div></div>'+
+  '<div style="text-align:center"><div style="font-size:11px;color:#888">Cost</div><div style="font-size:18px;font-weight:700;color:#DC2626" id="ext-cost">'+fmt(extCost)+'</div></div>'+
+  '<div style="text-align:center"><div style="font-size:11px;color:#888">Total time</div><div style="font-size:18px;font-weight:700;color:#059669" id="ext-total">'+fmtTime(totalTime)+'</div></div>'+
+  '</div></div>'+
+  '<button class="btn btn-p btn-w" style="padding:13px;font-size:14px" id="begin-btn" onclick="beginSim()">Begin — <span id="begin-time">'+fmtTime(totalTime)+'</span> on the clock</button></div>';
+}
+window.updExt=function(v){
+  const m=parseInt(v);S.pendingExtension=m;saveLocal();
+  const c=m*EXT_COST_PER_MIN;const t=TIMER_BASE+m*60;
+  const em=$('ext-mins');if(em)em.textContent=m;
+  const ec=$('ext-cost');if(ec)ec.textContent=fmt(c);
+  const et=$('ext-total');if(et)et.textContent=fmtTime(t);
+  const bt=$('begin-time');if(bt)bt.textContent=fmtTime(t);
+};
+window.beginSim=function(){
+  const ext=S.pendingExtension||0;
+  S.extensionCost=ext*EXT_COST_PER_MIN;
+  S.timerTotalSeconds=TIMER_BASE+ext*60;
+  S.timerStarted=Date.now();
+  S.roundStarted=true;
+  saveLocal();
+  startCountdown();
+  go('brief');
+};
+
+function drawBrief(){
+  const spentFromBudget=S.researchSpent+(S.extensionCost||0);
+  const investable=BUDGET_Y1-spentFromBudget;
+  let html='<div style="margin-bottom:1rem">'+
+  '<h1 style="margin-bottom:.25rem">Explore the Ventures</h1>'+
+  '<p style="margin-bottom:.75rem">Below are six businesses seeking capital. The one-line overview of each is free. Reading the full report on any venture costs <b>Rs.15L</b> deducted from your Year 1 budget immediately.</p></div>'+
+  '<div class="card" style="margin-bottom:1rem">'+
+  '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span class="muted">Year 1 budget</span><span style="font-weight:700;color:#4F46E5">'+fmt(investable)+' available to invest</span></div>'+
+  '<div class="bb"><div class="bf" style="width:'+Math.round((spentFromBudget/BUDGET_Y1)*100)+'%"></div></div>'+
+  '<div style="display:flex;justify-content:space-between;margin-top:4px">'+
+  '<span class="muted">Spent on research + time: '+fmt(spentFromBudget)+'</span>'+
+  '<span class="muted">Total: '+fmt(BUDGET_Y1)+'</span></div></div>';
+  STARTUPS.forEach(s=>{
+    const read=S.briefsRead.indexOf(s.id)>-1;
+    html+='<div class="card" id="bcard-'+s.id+'" style="margin-bottom:.75rem">'+
+    '<div style="display:flex;align-items:flex-start;gap:10px">'+
+    '<div style="flex:1;min-width:0">'+
+    '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">'+
+    '<span style="font-size:15px;font-weight:700">'+s.name+'</span>'+
+    '<span class="badge b-blue">'+s.sector+'</span>'+
+    '<span class="badge '+(s.mrr.indexOf('month')>-1?'b-green':'b-amber')+'">'+s.stage+'</span>'+
+    (read?'<span class="badge b-green">Report read</span>':'')+
+    '</div>'+
+    '<p style="margin:0;font-size:13px;color:#555">'+s.brief+'</p>'+
+    '</div>'+
+    (!read?'<button class="btn btn-g btn-sm" style="flex-shrink:0;border-color:#DC2626;color:#DC2626" onclick="readBrief(\''+s.id+'\')">Full report<br><span style="font-size:10px">-Rs.15L</span></button>':'')+
+    '</div>'+
+    (read?'<div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid #E5E5E3">'+
+    '<div class="g2" style="margin-bottom:.75rem"><div><label>Founder(s)</label><p>'+s.founder+'</p></div><div><label>Revenue</label><p>'+s.mrr+'</p></div></div>'+
+    '<p style="margin-bottom:.75rem">'+s.pitch+'</p>'+
+    '<div class="g2" style="margin-bottom:.75rem"><div><label>What has been done so far</label><p>'+s.workDone+'</p></div><div><label>What happens next</label><p>'+s.roadmap+'</p></div></div>'+
+    '<div class="ibox" style="border-left:3px solid #4F46E5;font-style:italic;margin-bottom:.75rem">'+s.quote+'</div>'+
+    '<div>'+s.signals.map(sig=>'<span class="tag">'+sig+'</span>').join('')+'</div></div>':'')+'</div>';
+  });
+  html+='<button class="btn btn-p btn-w" onclick="go(\'r1alloc\')" style="margin-top:.5rem">Proceed to capital allocation</button>';
+  app().innerHTML=html;
+}
+window.readBrief=function(id){
+  if(S.briefsRead.indexOf(id)>-1)return;
+  S.briefsRead.push(id);S.researchSpent+=RESEARCH_COST;saveLocal();drawBrief();
+};
+
+function drawR1Alloc(){
+  const spentFromBudget=S.researchSpent+(S.extensionCost||0);
+  const investable=BUDGET_Y1-spentFromBudget;
+  const total=Object.values(S.topAlloc).reduce((a,b)=>a+b,0);
+  const rem=investable-total;const over=rem<0;const pct=Math.min(100,total/investable*100);
+  let html='<h1 style="margin-bottom:.25rem">Year 1 — Allocate Capital</h1>'+
+  '<p style="margin-bottom:1rem">Decide how much each venture receives. Enter amounts in <b>Lakhs</b>. Rs.0 is a valid decision — you do not have to invest in everyone.</p>'+
+  '<div class="card" style="margin-bottom:1rem">'+
+  '<div style="display:flex;justify-content:space-between;margin-bottom:5px">'+
+  '<span class="muted">Research + time: '+fmt(spentFromBudget)+'</span>'+
+  '<span style="font-weight:700;color:'+(over?'#DC2626':rem===0?'#059669':'#4F46E5')+'">'+fmt(Math.abs(rem))+' '+(over?'over':'remaining')+'</span></div>'+
+  '<div class="bb"><div class="bf '+(over?'over':rem===0?'full':'')+'" id="top-bar" style="width:'+pct+'%"></div></div>'+
+  '<div style="display:flex;justify-content:space-between;margin-top:4px"><span class="muted">'+funded().length+' venture'+(funded().length!==1?'s':'')+' funded</span><span class="muted">Available: '+fmt(investable)+'</span></div></div>'+
+  '<div id="arows" style="display:flex;flex-direction:column;gap:7px;margin-bottom:1rem"></div>'+
+  '<div class="ibox">Type <b>50</b> for Rs.50L, <b>200</b> for Rs.2 Cr. Any amount not allocated here does not disappear — unspent Year 1 capital carries forward to Year 2.</div>'+
+  '<button id="abtn" class="btn btn-p btn-w">Continue to expense planning</button>';
+  app().innerHTML=html;
+  buildAllocRows(investable);
+  $('abtn').onclick=()=>{S.detailIdx=0;go('r1detail');};
+}
+function buildAllocRows(investable){
+  if(!$('arows'))return;$('arows').innerHTML='';
+  STARTUPS.forEach(s=>{
+    const v=(S.topAlloc[s.id]||0)/100000;const has=v>0;
+    const row=document.createElement('div');row.className='card';
+    row.style.cssText='display:flex;align-items:center;gap:12px;padding:.7rem 1rem;border-color:'+(has?'#4F46E5':'#E5E5E3');
+    row.innerHTML='<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">'+s.name+'</div><div class="muted">'+s.sector+' — '+s.stage+'</div></div>'+
+    '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0"><span class="muted">Rs.</span><input type="number" min="0" step="1" placeholder="0" value="'+(v||'')+'" data-sid="'+s.id+'"><span class="muted" style="font-size:11px">L</span></div>'+
+    (has?'<span style="font-size:12px;font-weight:700;color:#4F46E5;min-width:56px;text-align:right">'+fmt(S.topAlloc[s.id])+'</span>':'');
+    row.querySelector('input').addEventListener('input',e=>{
+      S.topAlloc[e.target.getAttribute('data-sid')]=Math.round(Math.max(0,parseFloat(e.target.value)||0)*100000);
+      rebuildAllocSummary(investable);saveLocal();
+    });
+    $('arows').appendChild(row);
+  });
+  rebuildAllocSummary(investable);
+}
+function rebuildAllocSummary(investable){
+  const t=Object.values(S.topAlloc).reduce((a,b)=>a+b,0);const o=t>investable;
+  const bar=$('top-bar');if(bar){bar.style.width=Math.min(100,t/investable*100)+'%';bar.className='bf '+(o?'over':t===investable?'full':'');}
+  const b=$('abtn');if(b){b.disabled=o||funded().length===0;b.textContent=o?'Over budget — adjust allocations':funded().length===0?'Fund at least one venture':'Continue to expense planning';}
+}
+
+function drawR1Detail(){
+  const f=funded();if(S.detailIdx>=f.length){save(1);go('r2intro');return;}
+  const s=f[S.detailIdx];const alloc=S.topAlloc[s.id];const isLast=S.detailIdx===f.length-1;
+  const diags=S.diagnostics[s.id]||{};const qs=DIAGNOSTICS[s.id];
+  const allDiags=qs.every((_,i)=>diags['q'+i]);
+  const exps=S.expenses[s.id]||{};
+  const expSpent=Object.values(exps).reduce((a,b)=>a+b,0);
+  const over=expSpent>alloc;const pct=Math.min(100,expSpent/alloc*100);
+  const warned=S.expWarned[s.id];
+  let html='<div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem">'+
+  '<span style="font-size:12px;color:#888">Venture '+(S.detailIdx+1)+' of '+f.length+'</span>'+
+  '<span style="margin-left:auto;font-size:13px;font-weight:700;color:#4F46E5">'+s.name+' — '+fmt(alloc)+'</span></div>'+
+  '<div class="card card-hi" style="margin-bottom:1rem">'+
+  '<h2 style="margin-bottom:4px">'+s.name+' <span class="badge b-blue">'+s.sector+'</span></h2>'+
+  '<p style="margin-bottom:.5rem">'+s.pitch+'</p>'+
+  '<div class="ibox" style="border-left:3px solid #4F46E5;font-style:italic;margin:0">'+s.quote+'</div></div>'+
+  '<div class="card" style="margin-bottom:1rem"><h2 style="margin-bottom:.5rem">Quick check before you allocate</h2>'+
+  '<p style="margin-bottom:1rem;color:#666;font-size:12px">Answer all '+qs.length+' questions to unlock the expense menu.</p>';
+  qs.forEach((q,i)=>{
+    html+='<div style="margin-bottom:1rem"><label>'+(i+1)+'. '+q.q+'</label>'+
+    '<select onchange="setDiag(\''+s.id+'\',\'q'+i+'\',this.value)">'+
+    '<option value="">Select your answer</option>'+
+    q.opts.map(o=>'<option'+(diags['q'+i]===o?' selected':'')+'>'+o+'</option>').join('')+
+    '</select></div>';
+  });
+  html+='</div>';
+  if(allDiags){
+    html+='<div class="card" style="margin-bottom:1rem">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">'+
+    '<h2>Expense planning</h2>'+
+    '<span style="font-weight:700;color:'+(over?'#DC2626':expSpent===alloc?'#059669':'#4F46E5')+'">'+fmt(expSpent)+' / '+fmt(alloc)+'</span></div>'+
+    '<div class="bb"><div class="bf '+(over?'over':expSpent===alloc?'full':'')+'" id="ebar" style="width:'+pct+'%"></div></div>'+
+    '<div style="display:flex;justify-content:space-between;margin-bottom:.75rem;margin-top:4px">'+
+    '<span class="muted">Amounts in Lakhs. Enter 0 to skip.</span>'+
+    '<span class="muted" id="eleft">'+fmt(Math.abs(alloc-expSpent))+' '+(over?'over':'remaining')+'</span></div>'+
+    '<div id="egrid">'+buildExpGrid(s.id)+'</div></div>';
+    if(warned&&!over&&expSpent<alloc){
+      html+='<div class="warn-box"><b>Heads up:</b> Rs.'+Math.round((alloc-expSpent)/100000)+'L is allocated to '+s.name+' but not assigned to any expense. Unallocated funds do not disappear — they carry forward to Year 2. Click proceed again if this is intentional.</div>';
+    }
+    html+='<button id="dbtn" class="btn btn-p btn-w" onclick="nextDetail()">'+(isLast?'Submit Year 1 allocation':'Next venture')+'</button>';
+  }else{
+    html+='<div class="ibox" style="text-align:center;color:#888">Answer all '+qs.length+' questions above to unlock the expense menu</div>';
+  }
+  app().innerHTML=html;
+  if(allDiags)updateDetBtn(isLast,alloc,expSpent,over);
+}
+function buildExpGrid(sid){
+  const exps=S.expenses[sid]||{};let html='';
+  DOMAINS.forEach(domain=>{
+    const items=EXPENSES.filter(e=>e.domain===domain);
+    html+='<div class="domain-hd">'+domain+'</div>';
+    items.forEach(e=>{
+      const v=exps[e.id]?exps[e.id]/100000:'';
+      html+='<div class="exp-row"><div style="flex:1;min-width:0"><div class="exp-lbl">'+e.label+'</div><div class="exp-desc">'+e.desc+'</div><div class="exp-cost">Typical cost: '+e.cost+'</div></div>'+
+      '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0"><input type="number" min="0" step=".5" placeholder="0" value="'+(v||'')+'" data-eid="'+e.id+'" onchange="updExp(this.getAttribute(\'data-eid\'),this.value)"><span class="muted" style="font-size:11px">L</span></div></div>';
+    });
+  });
+  return html;
+}
+window.setDiag=function(sid,key,val){if(!S.diagnostics[sid])S.diagnostics[sid]={};S.diagnostics[sid][key]=val;saveLocal();drawR1Detail();};
+window.updExp=function(eid,v){
+  const f=funded();const s=f[S.detailIdx];if(!s)return;
+  const sid=s.id;const alloc=S.topAlloc[sid];
+  if(!S.expenses[sid])S.expenses[sid]={};
+  const val=Math.round(Math.max(0,parseFloat(v)||0)*100000);
+  if(val===0)delete S.expenses[sid][eid];else S.expenses[sid][eid]=val;
+  const spent=Object.values(S.expenses[sid]).reduce((a,b)=>a+b,0);
+  const over=spent>alloc;
+  const bar=$('ebar');if(bar){bar.style.width=Math.min(100,spent/alloc*100)+'%';bar.className='bf '+(over?'over':spent===alloc?'full':'');}
+  const lbl=$('eleft');if(lbl){lbl.textContent=fmt(Math.abs(alloc-spent))+(over?' over':' remaining');lbl.style.color=over?'#DC2626':'';}
+  saveLocal();updateDetBtn(S.detailIdx===funded().length-1,alloc,spent,over);
+};
+function updateDetBtn(isLast,alloc,spent,over){
+  const b=$('dbtn');if(!b)return;
+  const ok=!over&&spent>0;
+  b.disabled=!ok;
+  b.textContent=over?'Over budget — adjust expenses':spent===0?'Allocate to at least one expense':isLast?'Submit Year 1 allocation':'Next venture';
+}
+window.nextDetail=function(){
+  const f=funded();const s=f[S.detailIdx];
+  const alloc=S.topAlloc[s.id];
+  const spent=Object.values(S.expenses[s.id]||{}).reduce((a,b)=>a+b,0);
+  if(spent<alloc&&!S.expWarned[s.id]){S.expWarned[s.id]=true;saveLocal();drawR1Detail();return;}
+  if(S.detailIdx<f.length-1){S.detailIdx++;go('r1detail');}else{save(1);go('r2intro');}
+};
+
+function drawR2Intro(){
+  const returns={};let totalInvested=0,totalReturned=0;
+  STARTUPS.forEach(s=>{const r=calcY1Return(s.id);if(r){returns[s.id]=r;totalInvested+=r.invested;totalReturned+=r.returned;}});
+  const totalPL=totalReturned-totalInvested;
+  const totalInv=Object.values(S.topAlloc).reduce((a,b)=>a+b,0);
+  const spentFromBudget=S.researchSpent+(S.extensionCost||0);
+  const unspent=Math.max(0,BUDGET_Y1-spentFromBudget-totalInv);
+  const profits=STARTUPS.reduce((a,s)=>{const r=calcY1Return(s.id);return a+(r&&r.profit>0?r.profit:0);},0);
+  const y2budget=calcY2Budget();
+  let html='<div style="font-size:11px;font-weight:700;color:#4F46E5;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem">Year 2 — Results from Year 1</div>'+
+  '<h1 style="margin-bottom:.25rem">What Happened in Year 1</h1>'+
+  '<p style="margin-bottom:1rem">A year has passed. Based on where you deployed capital, here is what happened across your portfolio.</p>'+
+  '<div class="card" style="margin-bottom:1rem">'+
+  '<div class="g3" style="margin-bottom:.75rem">'+
+  '<div><label>Total invested</label><div style="font-size:17px;font-weight:700">'+fmt(totalInvested)+'</div></div>'+
+  '<div><label>Total returned</label><div style="font-size:17px;font-weight:700">'+fmt(totalReturned)+'</div></div>'+
+  '<div><label>Net P&L</label><div style="font-size:17px;font-weight:700" class="'+(totalPL>=0?'profit':'loss')+'">'+(totalPL>=0?'+':'')+fmt(totalPL)+'</div></div>'+
+  '</div>'+
+  '<hr>'+
+  '<div class="g2">'+
+  '<div><div style="font-size:11px;color:#888">Unspent Year 1 capital carried forward</div><div style="font-size:15px;font-weight:700;color:#4F46E5">+'+fmt(unspent)+'</div></div>'+
+  '<div><div style="font-size:11px;color:#888">Profits earned</div><div style="font-size:15px;font-weight:700;color:#059669">+'+(profits>0?fmt(profits):'Rs.0')+'</div></div>'+
+  '</div>'+
+  '<div style="margin-top:.75rem;background:#EEF2FF;border-radius:8px;padding:.6rem 1rem;font-size:13px;font-weight:600;color:#4F46E5">'+
+  'Year 2 budget: '+fmt(y2budget)+' = Rs.5 Cr base + '+fmt(unspent)+' unspent + '+fmt(profits)+' profit</div></div>';
+  STARTUPS.forEach(s=>{
+    const r=returns[s.id];if(!r)return;
+    html+='<div class="card" style="margin-bottom:.75rem;border-left:3px solid '+(r.isGood?'#059669':'#DC2626')+'">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">'+
+    '<span style="font-size:14px;font-weight:700">'+s.name+'</span>'+
+    '<div style="text-align:right"><span class="'+(r.profit>=0?'profit':'loss')+'">'+(r.profit>=0?'+':'')+fmt(r.profit)+'</span><div class="muted">'+fmt(r.invested)+' in — '+fmt(r.returned)+' out</div></div></div>'+
+    '<p style="font-size:12px;color:#555;line-height:1.6">'+r.narrative+'</p></div>';
+  });
+  html+='<button class="btn btn-p btn-w" onclick="go(\'r2questions\')">Continue to Year 2 strategy questions</button>';
+  app().innerHTML=html;
+}
+
+function drawR2Questions(){
+  const f=funded();
+  let html='<h1 style="margin-bottom:.25rem">Year 2 — Strategy Check</h1>'+
+  '<p style="margin-bottom:1.25rem">Before allocating Year 2 capital, answer these questions about each venture in your portfolio.</p>';
+  f.forEach(s=>{
+    const qs=R2_QUESTIONS[s.id];const r2d=S.r2diagnostics[s.id]||{};
+    html+='<div class="card card-hi" style="margin-bottom:.75rem"><div style="font-size:14px;font-weight:700;margin-bottom:.75rem">'+s.name+'</div>';
+    qs.forEach((q,i)=>{
+      html+='<div style="margin-bottom:.75rem"><label>'+q.q+'</label>'+
+      '<select onchange="setR2Diag(\''+s.id+'\',\'q'+i+'\',this.value)">'+
+      '<option value="">Select your answer</option>'+
+      q.opts.map(o=>'<option'+(r2d['q'+i]===o?' selected':'')+'>'+o+'</option>').join('')+
+      '</select></div>';
+    });
+    html+='</div>';
+  });
+  const allAnswered=f.every(s=>{const qs=R2_QUESTIONS[s.id];const r2d=S.r2diagnostics[s.id]||{};return qs.every((_,i)=>r2d['q'+i]);});
+  html+='<button id="r2qbtn" class="btn btn-p btn-w" '+(allAnswered?'':'disabled')+' onclick="go(\'r2alloc\')">Proceed to Year 2 capital allocation</button>'+
+  (!allAnswered?'<p style="text-align:center;font-size:11px;color:#aaa;margin-top:.5rem">Answer all questions to proceed</p>':'');
+  app().innerHTML=html;
+}
+window.setR2Diag=function(sid,key,val){if(!S.r2diagnostics[sid])S.r2diagnostics[sid]={};S.r2diagnostics[sid][key]=val;saveLocal();drawR2Questions();};
+
+function drawR2Alloc(){
+  const y2budget=calcY2Budget();
+  const total=Object.values(S.y2alloc).reduce((a,b)=>a+b,0);
+  const rem=y2budget-total;const over=rem<0;const pct=Math.min(100,total/y2budget*100);
+  let html='<h1 style="margin-bottom:.25rem">Year 2 — Capital Allocation</h1>'+
+  '<p style="margin-bottom:1rem">Allocate your Year 2 budget. You can invest in ventures you skipped in Year 1, increase or cut existing bets, or walk away from any of them. Amounts in Lakhs.</p>'+
+  '<div class="card" style="margin-bottom:1rem">'+
+  '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span class="muted">Year 2 budget: '+fmt(y2budget)+'</span><span style="font-weight:700;color:'+(over?'#DC2626':rem===0?'#059669':'#4F46E5')+'">'+fmt(Math.abs(rem))+' '+(over?'over':'remaining')+'</span></div>'+
+  '<div class="bb"><div class="bf '+(over?'over':rem===0?'full':'')+'" id="y2bar" style="width:'+pct+'%"></div></div></div>'+
+  '<div id="y2rows" style="display:flex;flex-direction:column;gap:7px;margin-bottom:1rem"></div>'+
+  '<button id="y2btn" class="btn btn-p btn-w" onclick="save(2);go(\'r3crisis\')">Confirm Year 2 allocation and proceed to crisis decisions</button>';
+  app().innerHTML=html;
+  STARTUPS.forEach(s=>{
+    const y1=S.topAlloc[s.id]||0;const v=(S.y2alloc[s.id]||0)/100000;const has=v>0;
+    const row=document.createElement('div');row.className='card';
+    row.style.cssText='display:flex;align-items:center;gap:12px;padding:.7rem 1rem;border-color:'+(has?'#4F46E5':'#E5E5E3');
+    row.innerHTML='<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">'+s.name+'</div><div class="muted">Year 1: '+(y1>0?fmt(y1):'No investment')+'</div></div>'+
+    '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0"><span class="muted">Rs.</span><input type="number" min="0" step="1" placeholder="0" value="'+(v||'')+'" data-sid2="'+s.id+'"><span class="muted" style="font-size:11px">L</span></div>'+
+    (has?'<span style="font-size:12px;font-weight:700;color:#4F46E5;min-width:56px;text-align:right">'+fmt(S.y2alloc[s.id])+'</span>':'');
+    row.querySelector('input').addEventListener('input',e=>{
+      S.y2alloc[e.target.getAttribute('data-sid2')]=Math.round(Math.max(0,parseFloat(e.target.value)||0)*100000);
+      const t=Object.values(S.y2alloc).reduce((a,b)=>a+b,0);const o=t>y2budget;
+      const bar=$('y2bar');if(bar){bar.style.width=Math.min(100,t/y2budget*100)+'%';bar.className='bf '+(o?'over':t===y2budget?'full':'');}
+      const b=$('y2btn');if(b){b.disabled=o;b.textContent=o?'Over budget — adjust allocations':'Confirm Year 2 allocation and proceed to crisis decisions';}
+      saveLocal();
+    });
+    $('y2rows').appendChild(row);
+  });
+}
+
+function drawR3Crisis(){
+  const f=funded();let cidx=0;
+  const AI_TAUNTS=["Write your reasoning here. ChatGPT is not a co-founder. It has no skin in the game. You do.","Your analysis, not your chatbot's. We can tell the difference — and so can you.","Type your actual thinking. AI-written rationale sounds like a case study with no courage in it.","Surprise us with a thought we haven't read in a BCG article. Your brain, not the cloud's.","Write like the Rs.10 Cr is real. Because for this exercise, it is. No language model has stakes."];
+  function draw(){
+    const s=f[cidx];const cr=CRISES[s.id];
+    const dec=S.crisisCall[s.id]||{call:'',reason:''};const isLast=cidx===f.length-1;
+    const taunt=AI_TAUNTS[cidx%AI_TAUNTS.length];
+    let html='<div style="font-size:11px;font-weight:700;color:#DC2626;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem">Crisis '+(cidx+1)+' of '+f.length+'</div>'+
+    '<h1 style="margin-bottom:.25rem">'+cr.title+'</h1>'+
+    '<div class="card card-hi" style="margin-bottom:1rem"><span class="badge b-blue" style="margin-bottom:.5rem">'+s.name+'</span><p>'+cr.body+'</p></div>'+
+    '<div style="margin-bottom:1rem"><label>Your call</label>'+
+    '<div class="crisis-opt'+(dec.call==='Pivot'?' sel':'')+'" onclick="setCall(\''+s.id+'\',\'Pivot\')">Pivot — change strategy or direction</div>'+
+    '<div class="crisis-opt'+(dec.call==='Double down'?' sel':'')+'" onclick="setCall(\''+s.id+'\',\'Double down\')">Double down — commit harder to the current path</div>'+
+    '<div class="crisis-opt'+(dec.call==='Exit'?' sel':'')+'" onclick="setCall(\''+s.id+'\',\'Exit\')">Exit — walk away from this investment</div>'+
+    '</div>'+
+    '<div style="margin-bottom:1rem">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">'+
+    '<label style="margin:0">Your reasoning (40 words minimum)</label>'+
+    '<span class="muted" id="r3wc">'+wc(dec.reason||'')+' / 40</span></div>'+
+    '<textarea id="r3rat" rows="4" placeholder="'+taunt+'">'+(dec.reason||'')+'</textarea></div>'+
+    '<button id="r3btn" class="btn btn-p btn-w">'+(isLast?'Submit simulation':'Next crisis')+'</button>';
+    app().innerHTML=html;
+    $('r3rat').oninput=e=>{
+      if(!S.crisisCall[s.id])S.crisisCall[s.id]={call:dec.call,reason:''};
+      S.crisisCall[s.id].reason=e.target.value;saveLocal();
+      const w=wc(e.target.value);const wcel=$('r3wc');
+      if(wcel){wcel.textContent=w+' / 40';wcel.style.color=w>=40?'#059669':'#888';}
+      updR3Btn();
+    };
+    function updR3Btn(){
+      const d=S.crisisCall[s.id]||{};const w=wc(d.reason||'');const b=$('r3btn');if(!b)return;
+      const ok=d.call&&w>=40;b.disabled=!ok;
+      b.textContent=!d.call?'Select a call first':w<40?(40-w)+' more words needed':isLast?'Submit simulation':'Next crisis';
+    }
+    $('r3btn').onclick=()=>{if(cidx<f.length-1){cidx++;draw();}else{save(3);go('done');}};
+    window.setCall=(sid,call)=>{if(!S.crisisCall[sid])S.crisisCall[sid]={call:'',reason:''};S.crisisCall[sid].call=call;saveLocal();draw();};
+    updR3Btn();
+  }
+  draw();
+}
+
+function drawDone(){
+  clearInterval(timerInt);
+  const tb=$('timer-bar');if(tb)tb.style.display='none';
+  const nexora=S.isNexora;
+  app().innerHTML='<div style="text-align:center;padding:2.5rem 0">'+
+  '<div style="font-size:48px;margin-bottom:1rem">&#127919;</div>'+
+  '<h1>'+(nexora?'Test run complete':'Simulation complete')+'</h1>'+
+  '<p style="max-width:380px;margin:.75rem auto 1.5rem">'+(nexora?'NEXORA internal test submission recorded. Use the buttons below to review admin data or start a fresh test run.':'Your decisions across all three stages have been recorded and submitted. You will hear from the NEXORA team with next steps.')+'</p>'+
+  (nexora?
+    '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:1rem">'+
+    '<button class="btn btn-p" onclick="go(\'adminlogin\')">Go to admin panel</button>'+
+    '<button class="btn btn-g" onclick="resetForNexora()">Start fresh test run</button>'+
+    '</div>'+
+    '<p class="muted">Submissions from NEXORA IDs are tagged separately in the admin panel.</p>'
+    :
+    '<p class="muted">You may close this window.</p>'
+  )+'</div>';
+}
+window.resetForNexora=function(){
+  if(!confirm('This will clear your current test session so you can run through the simulation again from the beginning. Continue?'))return;
+  const isNex=S.isNexora;
+  S={screen:'home',user:null,savedId:null,detailIdx:0,topAlloc:{},diagnostics:{},expenses:{},y2alloc:{},r2diagnostics:{},crisisCall:{},briefsRead:[],researchSpent:0,extensionCost:0,roundStarted:false,timerStarted:null,timerTotalSeconds:TIMER_BASE,expWarned:{},isNexora:isNex,pendingExtension:0};
+  saveLocal();go('home');
+};
+
+function drawTimesUp(){
+  clearInterval(timerInt);
+  const tb=$('timer-bar');if(tb){tb.textContent='TIME\'S UP';tb.style.background='#DC2626';}
+  app().innerHTML='<div style="text-align:center;padding:3rem 1rem">'+
+  '<div style="font-size:56px;margin-bottom:1rem">&#8987;</div>'+
+  '<h1 style="font-size:28px;color:#DC2626;margin-bottom:.5rem">Time\'s up</h1>'+
+  '<p style="max-width:380px;margin:.75rem auto 1.5rem">Your 30 minutes are up. Whatever decisions you made have been automatically saved and submitted. That\'s the simulation.</p>'+
+  '<div class="ibox" style="max-width:420px;margin:0 auto">Your responses — including all allocations, answers, and reasoning entered so far — have been recorded. Incomplete stages are noted as-is.</div>'+
+  '<p class="muted" style="margin-top:1.5rem">You may close this window.</p></div>';
+}
+
+function drawAdminLogin(){
+  app().innerHTML='<div style="max-width:300px;margin:3rem auto;text-align:center">'+
+  '<h1 style="margin-bottom:1rem">Admin access</h1>'+
+  '<input type="password" id="apw" placeholder="Password" style="margin-bottom:6px">'+
+  '<div id="apwerr" style="color:#DC2626;font-size:11px;min-height:14px;margin-bottom:8px"></div>'+
+  '<button class="btn btn-p btn-w" onclick="chkAdmin()">Enter</button>'+
+  '<br><br><button class="btn btn-g" onclick="go(\'home\')">Back</button></div>';
+  $('apw').addEventListener('keydown',e=>{if(e.key==='Enter')window.chkAdmin();});
+}
+window.chkAdmin=()=>{if($('apw').value==='NEXORA2025')go('admin');else $('apwerr').textContent='Incorrect password';};
+
+async function drawAdmin(){
+  app().innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem"><h1>Admin Panel</h1><button class="btn btn-g btn-sm" onclick="go(\'home\')">Back to home</button></div><p class="muted">Loading submissions...</p>';
+  try{
+    const res=await db.from('submissions').select('*').order('submitted_at',{ascending:false});
+    const data=res.data||[];
+    function dbd(expenses){const t={};DOMAINS.forEach(d=>t[d]=0);STARTUPS.forEach(s=>{const ex=(expenses&&expenses[s.id])||{};Object.entries(ex).forEach(([eid,amt])=>{const exp=EXPENSES.find(e=>e.id===eid);if(exp)t[exp.domain]=(t[exp.domain]||0)+amt;});});return t;}
+    let html='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem"><h1>Admin Panel</h1><button class="btn btn-g btn-sm" onclick="go(\'home\')">Back</button></div>'+
+    '<div class="card" style="margin-bottom:1rem"><div class="g3">'+
+    '<div><label>Submissions</label><div style="font-size:22px;font-weight:700">'+data.length+'</div></div>'+
+    '<div><label>Year 1 done</label><div style="font-size:22px;font-weight:700">'+data.filter(d=>d.phase_completed>=1).length+'</div></div>'+
+    '<div><label>All stages done</label><div style="font-size:22px;font-weight:700">'+data.filter(d=>d.phase_completed>=3).length+'</div></div>'+
+    '</div></div>';
+    if(!data.length)html+='<div class="ibox">No submissions yet.</div>';
+    else data.forEach(row=>{
+      const db2=dbd(row.expenses);const totalExp=Object.values(db2).reduce((a,b)=>a+b,0);
+      html+='<div class="card" style="margin-bottom:.75rem">'+
+      '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:.5rem">'+
+      '<b>'+row.name+'</b><span class="badge b-blue">'+row.roll+'</span>'+
+      '<span class="badge b-amber">'+(row.program||'?')+' — Sec '+(row.section||'?')+'</span>'+
+      (row.is_nexora?'<span class="badge b-red">NEXORA TEST</span>':'')+
+      '<span style="margin-left:auto" class="badge '+(row.phase_completed>=3?'b-green':row.phase_completed>=2?'b-amber':'b-red')+'">Phase '+row.phase_completed+'/3</span></div>'+
+      '<div style="margin-bottom:.5rem">'+STARTUPS.map(s=>{const a=(row.top_alloc&&row.top_alloc[s.id])||0;return a>0?'<span class="tag"><b>'+s.name+'</b>: '+fmt(a)+'</span>':'';}).join('')+'</div>'+
+      '<div style="margin-bottom:.75rem"><label style="margin-bottom:4px">Domain spend profile</label><div style="display:flex;gap:6px;flex-wrap:wrap">'+
+      DOMAINS.map(d=>{const amt=db2[d]||0,p2=totalExp>0?Math.round(amt/totalExp*100):0;return p2>0?'<div style="background:#EEF2FF;border-radius:6px;padding:4px 8px;font-size:11px"><b style="color:#4F46E5">'+d+'</b><br><span style="color:#555">'+p2+'% ('+fmt(amt)+')</span></div>':'';}).join('')+
+      '</div></div>'+
+      (row.crisis_call?'<div style="margin-bottom:.5rem">'+Object.entries(row.crisis_call).map(([sid,v])=>{const st=STARTUPS.find(x=>x.id===sid);return'<span class="tag"><b>'+(st?st.name:sid)+':</b> '+v.call+'</span>';}).join('')+'</div>':'')+
+      '<details><summary>Full detail</summary><div style="margin-top:.75rem;font-size:12px;line-height:1.8">'+
+      '<b>Y1 diagnostics:</b><br>'+STARTUPS.map(s=>{const d2=(row.diagnostics&&row.diagnostics[s.id])||{};const qs=DIAGNOSTICS[s.id];if(!Object.keys(d2).length)return'';return'<div style="margin:.3rem 0"><b>'+s.name+':</b> '+qs.map((q,i)=>'[Q'+(i+1)+'] '+(d2['q'+i]||'—')).join(' | ')+'</div>';}).join('')+
+      '<br><b>Y2 diagnostics:</b><br>'+STARTUPS.map(s=>{const d2=(row.r2diagnostics&&row.r2diagnostics[s.id])||{};const qs=R2_QUESTIONS[s.id];if(!Object.keys(d2).length)return'';return'<div style="margin:.3rem 0"><b>'+s.name+':</b> '+qs.map((q,i)=>'[Q'+(i+1)+'] '+(d2['q'+i]||'—')).join(' | ')+'</div>';}).join('')+
+      '<br><b>Expenses:</b><br>'+STARTUPS.map(s=>{const ex=(row.expenses&&row.expenses[s.id])||{};const items=Object.entries(ex).filter(([,v])=>v>0);if(!items.length)return'';return'<div style="margin:.3rem 0"><b>'+s.name+':</b> '+items.map(([eid,amt])=>{const exp=EXPENSES.find(x=>x.id===eid);return(exp?exp.label:eid)+' ('+fmt(amt)+')';}).join(', ')+'</div>';}).join('')+
+      '<br><b>Crisis calls:</b><br>'+Object.entries(row.crisis_call||{}).map(([sid,v])=>{const st=STARTUPS.find(x=>x.id===sid);return'<div style="margin:.3rem 0"><b>'+(st?st.name:sid)+' — '+v.call+':</b> '+v.reason+'</div>';}).join('')+
+      '</div></details></div>';
+    });
+    app().innerHTML=html;
+  }catch(e){app().innerHTML='<div class="ibox" style="color:#DC2626">Error loading: '+e.message+'</div>';}
+}
+
+function render(){
+  const s=S.screen;
+  if(s==='home')drawHome();
+  else if(s==='register')drawRegister();
+  else if(s==='timerinfo')drawTimerInfo();
+  else if(s==='brief')drawBrief();
+  else if(s==='r1alloc')drawR1Alloc();
+  else if(s==='r1detail')drawR1Detail();
+  else if(s==='r2intro')drawR2Intro();
+  else if(s==='r2questions')drawR2Questions();
+  else if(s==='r2alloc')drawR2Alloc();
+  else if(s==='r3crisis')drawR3Crisis();
+  else if(s==='done')drawDone();
+  else if(s==='timesup')drawTimesUp();
+  else if(s==='adminlogin')drawAdminLogin();
+  else if(s==='admin')drawAdmin();
+  if(S.roundStarted&&s!=='done'&&s!=='timesup'&&s!=='admin'&&s!=='adminlogin'){
+    const tb=$('timer-bar');if(tb)tb.style.display='block';
+    startCountdown();
+  }
+}
+
+loadLocal();
+if(S.roundStarted&&S.screen!=='done'&&S.screen!=='timesup'){const rem=getRem();if(rem<=0){S.screen='timesup';}}
+render();
+</script>
+</body>
+</html>
