@@ -69,7 +69,7 @@ const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
 const db=supabase.createClient(SB_URL,SB_KEY);
 
 const BUDGET_Y1=100000000;
-const BUDGET_Y2_BASE=50000000;
+const BUDGET_Y2_BASE=100000000;
 const RESEARCH_COST=1500000;
 const EXT_COST_PER_MIN=5000000;
 const TIMER_BASE=30*60;
@@ -285,12 +285,12 @@ function calcY1Return(sid){
 }
 
 function calcY2Budget(){
-  const totalInvested=Object.values(S.topAlloc).reduce((a,b)=>a+b,0);
-  const spentFromY1=S.researchSpent+(S.extensionCost||0)+totalInvested;
-  const unspent=Math.max(0,BUDGET_Y1-spentFromY1);
-  let profits=0;
-  STARTUPS.forEach(s=>{const r=calcY1Return(s.id);if(r&&r.profit>0)profits+=r.profit;});
-  return BUDGET_Y2_BASE+unspent+profits;
+  const totalAllocated=Object.values(S.topAlloc).reduce((a,b)=>a+b,0);
+  const overheads=S.researchSpent+(S.extensionCost||0);
+  const unallocated=Math.max(0,BUDGET_Y1-overheads-totalAllocated);
+  let netPL=0;
+  STARTUPS.forEach(s=>{const r=calcY1Return(s.id);if(r)netPL+=(r.returned-r.invested);});
+  return Math.max(0,BUDGET_Y2_BASE+unallocated+netPL);
 }
 
 const EVENTS={
@@ -311,7 +311,7 @@ const CRISES={
   neuroleap:{title:'The compliance notice',body:'A parents\' group filed a formal complaint with India\'s data protection authority alleging that NeuroLeap\'s school pilot collected children\'s cognitive assessment data without properly completing the consent requirements under the DPDP Act 2023. A formal written response is required within 14 days or the pilot must be suspended immediately.'},
 };
 
-let S={screen:'home',user:null,savedId:null,detailIdx:0,topAlloc:{},diagnostics:{},expenses:{},y2alloc:{},r2diagnostics:{},crisisCall:{},briefsRead:[],researchSpent:0,extensionCost:0,roundStarted:false,timerStarted:null,timerTotalSeconds:TIMER_BASE,expWarned:{},isNexora:false,};
+let S={screen:'home',user:null,savedId:null,detailIdx:0,topAlloc:{},diagnostics:{},expenses:{},y2alloc:{},r2diagnostics:{},crisisCall:{},briefsRead:[],researchSpent:0,extensionCost:0,roundStarted:false,timerEndTime:null,timerTotalSeconds:TIMER_BASE,expWarned:{},isNexora:false,};
 
 function saveLocal(){try{localStorage.setItem('nexora_sim_v3',JSON.stringify(S));}catch(e){}}
 function loadLocal(){try{const d=localStorage.getItem('nexora_sim_v3');if(d){Object.assign(S,JSON.parse(d));return true;}}catch(e){}return false;}
@@ -319,14 +319,14 @@ function loadLocal(){try{const d=localStorage.getItem('nexora_sim_v3');if(d){Obj
 async function save(phase){
   saveLocal();
   try{
-    const p={name:S.user?.name,roll:S.user?.roll,section:S.user?.section,program:S.user?.program,email:S.user?.email,top_alloc:S.topAlloc,diagnostics:S.diagnostics,expenses:S.expenses,y2alloc:S.y2alloc,r2diagnostics:S.r2diagnostics,crisis_call:S.crisisCall,briefs_read:S.briefsRead,research_spent:S.researchSpent,phase_completed:phase,is_nexora:S.isNexora};
+    const p={name:S.user?.name,roll:S.user?.roll,section:S.user?.section,program:S.user?.program,top_alloc:S.topAlloc,diagnostics:S.diagnostics,expenses:S.expenses,y2alloc:S.y2alloc,r2diagnostics:S.r2diagnostics,crisis_call:S.crisisCall,briefs_read:S.briefsRead,research_spent:S.researchSpent,phase_completed:phase};
     if(S.savedId){await db.from('submissions').update(p).eq('id',S.savedId);}
     else{const {data,error}=await db.from('submissions').insert(p).select();if(error)console.error('SB:',error);if(data&&data[0])S.savedId=data[0].id;saveLocal();}
   }catch(e){console.error(e);}
 }
 
 let timerInt=null;
-function getRem(){if(!S.timerStarted)return S.timerTotalSeconds;return Math.max(0,S.timerTotalSeconds-Math.floor((Date.now()-S.timerStarted)/1000));}
+function getRem(){if(!S.timerEndTime)return S.timerTotalSeconds;const rem=Math.floor((S.timerEndTime-Date.now())/1000);return Math.max(0,Math.min(rem,S.timerTotalSeconds));}
 function fmtTime(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
 
 function startCountdown(){
@@ -428,7 +428,7 @@ window.beginSim=function(){
   const ext=S.pendingExtension||0;
   S.extensionCost=ext*EXT_COST_PER_MIN;
   S.timerTotalSeconds=TIMER_BASE+ext*60;
-  S.timerStarted=Date.now();
+  S.timerEndTime=Date.now()+(S.timerTotalSeconds*1000);
   S.roundStarted=true;
   saveLocal();
   startCountdown();
@@ -487,38 +487,50 @@ function drawR1Alloc(){
   '<div class="card" style="margin-bottom:1rem">'+
   '<div style="display:flex;justify-content:space-between;margin-bottom:5px">'+
   '<span class="muted">Research + time: '+fmt(spentFromBudget)+'</span>'+
-  '<span style="font-weight:700;color:'+(over?'#DC2626':rem===0?'#059669':'#4F46E5')+'">'+fmt(Math.abs(rem))+' '+(over?'over':'remaining')+'</span></div>'+
-  '<div class="bb"><div class="bf '+(over?'over':rem===0?'full':'')+'" id="top-bar" style="width:'+pct+'%"></div></div>'+
-  '<div style="display:flex;justify-content:space-between;margin-top:4px"><span class="muted">'+funded().length+' venture'+(funded().length!==1?'s':'')+' funded</span><span class="muted">Available: '+fmt(investable)+'</span></div></div>'+
+  '<span id="alloc-rem" style="font-weight:700;color:#4F46E5">'+fmt(investable)+' remaining</span></div>'+
+  '<div class="bb"><div class="bf" id="top-bar" style="width:0%"></div></div>'+
+  '<div style="display:flex;justify-content:space-between;margin-top:4px"><span class="muted" id="funded-count">0 ventures funded</span><span class="muted">Available: '+fmt(investable)+'</span></div></div>'+
   '<div id="arows" style="display:flex;flex-direction:column;gap:7px;margin-bottom:1rem"></div>'+
-  '<div class="ibox">Type <b>50</b> for Rs.50L, <b>200</b> for Rs.2 Cr. Any amount not allocated here does not disappear — unspent Year 1 capital carries forward to Year 2.</div>'+
+  '<div class="ibox">Type <b>50</b> for Rs.50L, <b>200</b> for Rs.2 Cr. Any capital you do <b>not</b> assign to a startup here carries forward as-is to Year 2. Capital you assign to a startup but do not spend on expenses is <b>wasted</b>.</div>'+
   '<button id="abtn" class="btn btn-p btn-w">Continue to expense planning</button>';
   app().innerHTML=html;
-  buildAllocRows(investable);
+  buildAllocRows();
   $('abtn').onclick=()=>{S.detailIdx=0;go('r1detail');};
 }
-function buildAllocRows(investable){
+function buildAllocRows(){
   if(!$('arows'))return;$('arows').innerHTML='';
   STARTUPS.forEach(s=>{
-    const v=(S.topAlloc[s.id]||0)/100000;const has=v>0;
+    const v=(S.topAlloc[s.id]||0)/100000;
     const row=document.createElement('div');row.className='card';
-    row.style.cssText='display:flex;align-items:center;gap:12px;padding:.7rem 1rem;border-color:'+(has?'#4F46E5':'#E5E5E3');
+    row.style.cssText='display:flex;align-items:center;gap:12px;padding:.7rem 1rem';
     row.innerHTML='<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">'+s.name+'</div><div class="muted">'+s.sector+' — '+s.stage+'</div></div>'+
-    '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0"><span class="muted">Rs.</span><input type="number" min="0" step="1" placeholder="0" value="'+(v||'')+'" data-sid="'+s.id+'"><span class="muted" style="font-size:11px">L</span></div>'+
-    (has?'<span style="font-size:12px;font-weight:700;color:#4F46E5;min-width:56px;text-align:right">'+fmt(S.topAlloc[s.id])+'</span>':'');
-    row.querySelector('input').addEventListener('input',e=>{
-      S.topAlloc[e.target.getAttribute('data-sid')]=Math.round(Math.max(0,parseFloat(e.target.value)||0)*100000);
-      rebuildAllocSummary(investable);saveLocal();
-    });
+    '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0"><span class="muted">Rs.</span>'+
+    '<input type="number" min="0" step="1" placeholder="0" value="'+(v||'')+'" oninput="updTopAlloc(\''+s.id+'\',this.value)">'+
+    '<span class="muted" style="font-size:11px">L</span></div>';
     $('arows').appendChild(row);
   });
-  rebuildAllocSummary(investable);
+  rebuildAllocSummary();
 }
-function rebuildAllocSummary(investable){
+function getInvestable(){return BUDGET_Y1-S.researchSpent-(S.extensionCost||0);}
+function rebuildAllocSummary(){
+  const investable=getInvestable();
   const t=Object.values(S.topAlloc).reduce((a,b)=>a+b,0);const o=t>investable;
   const bar=$('top-bar');if(bar){bar.style.width=Math.min(100,t/investable*100)+'%';bar.className='bf '+(o?'over':t===investable?'full':'');}
+  const remEl=$('alloc-rem');if(remEl){remEl.textContent=fmt(Math.abs(investable-t))+' '+(o?'over budget':'remaining');remEl.style.color=o?'#DC2626':t===investable?'#059669':'#4F46E5';}
   const b=$('abtn');if(b){b.disabled=o||funded().length===0;b.textContent=o?'Over budget — adjust allocations':funded().length===0?'Fund at least one venture':'Continue to expense planning';}
 }
+window.updTopAlloc=function(sid,v){
+  S.topAlloc[sid]=Math.round(Math.max(0,parseFloat(v)||0)*100000);
+  saveLocal();rebuildAllocSummary();
+};
+window.updY2Alloc=function(sid,v,y2budget){
+  S.y2alloc[sid]=Math.round(Math.max(0,parseFloat(v)||0)*100000);
+  const t=Object.values(S.y2alloc).reduce((a,b)=>a+b,0);const o=t>y2budget;
+  const bar=$('y2bar');if(bar){bar.style.width=Math.min(100,t/y2budget*100)+'%';bar.className='bf '+(o?'over':t===y2budget?'full':'');}
+  const rem=$('y2rem');if(rem){rem.textContent=fmt(Math.abs(y2budget-t))+' '+(o?'over budget':'remaining');rem.style.color=o?'#DC2626':t===y2budget?'#059669':'#4F46E5';}
+  const b=$('y2btn');if(b){b.disabled=o;b.textContent=o?'Over budget — adjust allocations':'Confirm Year 2 allocation and proceed to crisis decisions';}
+  saveLocal();
+};
 
 function drawR1Detail(){
   const f=funded();if(S.detailIdx>=f.length){save(1);go('r2intro');return;}
@@ -557,7 +569,7 @@ function drawR1Detail(){
     '<span class="muted" id="eleft">'+fmt(Math.abs(alloc-expSpent))+' '+(over?'over':'remaining')+'</span></div>'+
     '<div id="egrid">'+buildExpGrid(s.id)+'</div></div>';
     if(warned&&!over&&expSpent<alloc){
-      html+='<div class="warn-box"><b>Heads up:</b> Rs.'+Math.round((alloc-expSpent)/100000)+'L is allocated to '+s.name+' but not assigned to any expense. Unallocated funds do not disappear — they carry forward to Year 2. Click proceed again if this is intentional.</div>';
+      html+='<div class="warn-box"><b>Warning:</b> Rs.'+Math.round((alloc-expSpent)/100000)+'L allocated to '+s.name+' is sitting unspent on expenses. Money committed to a startup but not deployed on any expense is <b>wasted</b> — it does not carry forward. Only money you never allocated to any startup carries forward. Click proceed if you are certain.</div>';
     }
     html+='<button id="dbtn" class="btn btn-p btn-w" onclick="nextDetail()">'+(isLast?'Submit Year 1 allocation':'Next venture')+'</button>';
   }else{
@@ -610,10 +622,11 @@ function drawR2Intro(){
   const returns={};let totalInvested=0,totalReturned=0;
   STARTUPS.forEach(s=>{const r=calcY1Return(s.id);if(r){returns[s.id]=r;totalInvested+=r.invested;totalReturned+=r.returned;}});
   const totalPL=totalReturned-totalInvested;
-  const totalInv=Object.values(S.topAlloc).reduce((a,b)=>a+b,0);
-  const spentFromBudget=S.researchSpent+(S.extensionCost||0);
-  const unspent=Math.max(0,BUDGET_Y1-spentFromBudget-totalInv);
-  const profits=STARTUPS.reduce((a,s)=>{const r=calcY1Return(s.id);return a+(r&&r.profit>0?r.profit:0);},0);
+  const totalAllocated=Object.values(S.topAlloc).reduce((a,b)=>a+b,0);
+  const overheads=S.researchSpent+(S.extensionCost||0);
+  const unallocated=Math.max(0,BUDGET_Y1-overheads-totalAllocated);
+  let netPL=0;
+  STARTUPS.forEach(s=>{const r=calcY1Return(s.id);if(r)netPL+=(r.returned-r.invested);});
   const y2budget=calcY2Budget();
   let html='<div style="font-size:11px;font-weight:700;color:#4F46E5;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem">Year 2 — Results from Year 1</div>'+
   '<h1 style="margin-bottom:.25rem">What Happened in Year 1</h1>'+
@@ -625,12 +638,13 @@ function drawR2Intro(){
   '<div><label>Net P&L</label><div style="font-size:17px;font-weight:700" class="'+(totalPL>=0?'profit':'loss')+'">'+(totalPL>=0?'+':'')+fmt(totalPL)+'</div></div>'+
   '</div>'+
   '<hr>'+
-  '<div class="g2">'+
-  '<div><div style="font-size:11px;color:#888">Unspent Year 1 capital carried forward</div><div style="font-size:15px;font-weight:700;color:#4F46E5">+'+fmt(unspent)+'</div></div>'+
-  '<div><div style="font-size:11px;color:#888">Profits earned</div><div style="font-size:15px;font-weight:700;color:#059669">+'+(profits>0?fmt(profits):'Rs.0')+'</div></div>'+
+  '<div class="g3">'+
+  '<div><div style="font-size:11px;color:#888">Base budget</div><div style="font-size:15px;font-weight:700;color:#4F46E5">Rs.10 Cr</div></div>'+
+  '<div><div style="font-size:11px;color:#888">Unallocated Y1 carried forward</div><div style="font-size:15px;font-weight:700;color:#4F46E5">+'+(unallocated>0?fmt(unallocated):'Rs.0')+'</div></div>'+
+  '<div><div style="font-size:11px;color:#888">Net P&L from Y1</div><div style="font-size:15px;font-weight:700;class="'+(netPL>=0?'profit':'loss')+'">color:'+(netPL>=0?'#059669':'#DC2626')+'">'+(netPL>=0?'+':'')+fmt(netPL)+'</div></div>'+
   '</div>'+
   '<div style="margin-top:.75rem;background:#EEF2FF;border-radius:8px;padding:.6rem 1rem;font-size:13px;font-weight:600;color:#4F46E5">'+
-  'Year 2 budget: '+fmt(y2budget)+' = Rs.5 Cr base + '+fmt(unspent)+' unspent + '+fmt(profits)+' profit</div></div>';
+  'Year 2 budget: '+fmt(y2budget)+' = Rs.10 Cr base + '+fmt(unallocated)+' unallocated '+(netPL>=0?'+ '+fmt(netPL)+' profit':'− '+fmt(Math.abs(netPL))+' loss')+'</div></div>';
   STARTUPS.forEach(s=>{
     const r=returns[s.id];if(!r)return;
     html+='<div class="card" style="margin-bottom:.75rem;border-left:3px solid '+(r.isGood?'#059669':'#DC2626')+'">'+
@@ -673,8 +687,8 @@ function drawR2Alloc(){
   let html='<h1 style="margin-bottom:.25rem">Year 2 — Capital Allocation</h1>'+
   '<p style="margin-bottom:1rem">Allocate your Year 2 budget. You can invest in ventures you skipped in Year 1, increase or cut existing bets, or walk away from any of them. Amounts in Lakhs.</p>'+
   '<div class="card" style="margin-bottom:1rem">'+
-  '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span class="muted">Year 2 budget: '+fmt(y2budget)+'</span><span style="font-weight:700;color:'+(over?'#DC2626':rem===0?'#059669':'#4F46E5')+'">'+fmt(Math.abs(rem))+' '+(over?'over':'remaining')+'</span></div>'+
-  '<div class="bb"><div class="bf '+(over?'over':rem===0?'full':'')+'" id="y2bar" style="width:'+pct+'%"></div></div></div>'+
+  '<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span class="muted">Year 2 budget: '+fmt(y2budget)+'</span><span id="y2rem" style="font-weight:700;color:#4F46E5">'+fmt(y2budget)+' remaining</span></div>'+
+  '<div class="bb"><div class="bf" id="y2bar" style="width:0%"></div></div></div>'+
   '<div id="y2rows" style="display:flex;flex-direction:column;gap:7px;margin-bottom:1rem"></div>'+
   '<button id="y2btn" class="btn btn-p btn-w" onclick="save(2);go(\'r3crisis\')">Confirm Year 2 allocation and proceed to crisis decisions</button>';
   app().innerHTML=html;
@@ -683,15 +697,9 @@ function drawR2Alloc(){
     const row=document.createElement('div');row.className='card';
     row.style.cssText='display:flex;align-items:center;gap:12px;padding:.7rem 1rem;border-color:'+(has?'#4F46E5':'#E5E5E3');
     row.innerHTML='<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">'+s.name+'</div><div class="muted">Year 1: '+(y1>0?fmt(y1):'No investment')+'</div></div>'+
-    '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0"><span class="muted">Rs.</span><input type="number" min="0" step="1" placeholder="0" value="'+(v||'')+'" data-sid2="'+s.id+'"><span class="muted" style="font-size:11px">L</span></div>'+
-    (has?'<span style="font-size:12px;font-weight:700;color:#4F46E5;min-width:56px;text-align:right">'+fmt(S.y2alloc[s.id])+'</span>':'');
-    row.querySelector('input').addEventListener('input',e=>{
-      S.y2alloc[e.target.getAttribute('data-sid2')]=Math.round(Math.max(0,parseFloat(e.target.value)||0)*100000);
-      const t=Object.values(S.y2alloc).reduce((a,b)=>a+b,0);const o=t>y2budget;
-      const bar=$('y2bar');if(bar){bar.style.width=Math.min(100,t/y2budget*100)+'%';bar.className='bf '+(o?'over':t===y2budget?'full':'');}
-      const b=$('y2btn');if(b){b.disabled=o;b.textContent=o?'Over budget — adjust allocations':'Confirm Year 2 allocation and proceed to crisis decisions';}
-      saveLocal();
-    });
+    '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0"><span class="muted">Rs.</span>'+
+    '<input type="number" min="0" step="1" placeholder="0" value="'+(v||'')+'" oninput="updY2Alloc(\''+s.id+'\',this.value,'+y2budget+')">'+
+    '<span class="muted" style="font-size:11px">L</span></div>';
     $('y2rows').appendChild(row);
   });
 }
@@ -758,7 +766,7 @@ function drawDone(){
 window.resetForNexora=function(){
   if(!confirm('This will clear your current test session so you can run through the simulation again from the beginning. Continue?'))return;
   const isNex=S.isNexora;
-  S={screen:'home',user:null,savedId:null,detailIdx:0,topAlloc:{},diagnostics:{},expenses:{},y2alloc:{},r2diagnostics:{},crisisCall:{},briefsRead:[],researchSpent:0,extensionCost:0,roundStarted:false,timerStarted:null,timerTotalSeconds:TIMER_BASE,expWarned:{},isNexora:isNex,pendingExtension:0};
+  S={screen:'home',user:null,savedId:null,detailIdx:0,topAlloc:{},diagnostics:{},expenses:{},y2alloc:{},r2diagnostics:{},crisisCall:{},briefsRead:[],researchSpent:0,extensionCost:0,roundStarted:false,timerEndTime:null,timerTotalSeconds:TIMER_BASE,expWarned:{},isNexora:isNex,pendingExtension:0};
   saveLocal();go('home');
 };
 
