@@ -313,7 +313,7 @@ let S={screen:'home',user:null,savedId:null,detailIdx:0,topAlloc:{},diagnostics:
 function saveLocal(){try{localStorage.setItem('nexora_sim_v3',JSON.stringify(S));}catch(e){}}
 function loadLocal(){try{const d=localStorage.getItem('nexora_sim_v3');if(d){Object.assign(S,JSON.parse(d));return true;}}catch(e){}return false;}
 
-const SHEETS_URL='https://script.google.com/macros/s/AKfycbyKc-GdqJiarGGvHapIhs8a8uriNgjO8ZS110fb5evH7dutcl8sPFg7eqB6ooH8o66-xw/exec'; // Paste your Google Apps Script URL here after setup
+const SHEETS_URL=''; // Paste your Google Apps Script URL here after setup
 
 function toast(msg,type='err'){
   const d=document.createElement('div');
@@ -375,7 +375,7 @@ function save(phase, isFinal=false){
     simulation_data:{top_alloc:S.topAlloc,expenses:S.expenses,diagnostics:S.diagnostics,
       y2alloc:S.y2alloc,r2diagnostics:S.r2diagnostics,crisis_call:S.crisisCall,
       briefs_read:S.briefsRead,research_spent:S.researchSpent,extension_cost:S.extensionCost,
-      timed_out:false},
+      timed_out:S.timedOut||false},
     report_prompt:isFinal?buildReportPrompt(false):null,
     financial_summary:isFinal?buildFinancialSummary():null,
     phase_timestamps:S.phaseTimestamps,
@@ -397,7 +397,7 @@ function startCountdown(){
     const td=$('timer-display');if(td)td.textContent=fmtTime(rem);
     const tb2=$('timer-bar');
     if(tb2){if(rem<300)tb2.classList.add('urgent');else tb2.classList.remove('urgent');}
-    if(rem<=0){clearInterval(timerInt);save(S.phase_completed||1);go('timesup');}
+    if(rem<=0){clearInterval(timerInt);S.timedOut=true;saveLocal();go('timesup');}
   },1000);
   const td=$('timer-display');if(td)td.textContent=fmtTime(getRem());
 }
@@ -491,7 +491,6 @@ window.beginSim=function(){
   S.timerEndTime=Date.now()+(S.timerTotalSeconds*1000);
   S.roundStarted=true;
   S.phaseTimestamps={simStart:new Date().toISOString()};
-  localStorage.removeItem('nexora_sim_v3');
   saveLocal();
   startCountdown();
   go('brief');
@@ -851,59 +850,72 @@ FULL BRIEFS PURCHASED (Rs.15L each): ${S.briefsRead.length} of 6 ventures (${S.b
   });
 
   const y2funded=STARTUPS.filter(s=>(S.y2alloc[s.id]||0)>0);
-  prompt+=`\n--- YEAR 2 DECISIONS ---
-Y2 Budget: ${fmt(calcY2Budget())}
-`;
-  y2funded.forEach(s=>{
-    const st=STARTUPS.find(x=>x.id===s.id);
-    const r2d=S.r2diagnostics[s.id]||{};
-    const r2qs=R2_QUESTIONS[s.id];
-    prompt+=`\n${st?.name}: Allocated ${fmt(S.y2alloc[s.id]||0)} in Year 2`;
-    r2qs.forEach((q,i)=>{prompt+=`\n    Q: ${q.q}\n    A: ${r2d['q'+i]||'(not answered)'}`;});
-  });
+  const hasY2=y2funded.length>0;
+  const hasCrisis=Object.keys(S.crisisCall||{}).length>0;
 
-  prompt+=`\n--- CRISIS DECISIONS ---
-`;
-  Object.entries(S.crisisCall||{}).forEach(([sid,dec])=>{
-    const st=STARTUPS.find(x=>x.id===sid);
-    const cr=CRISES[sid];
-    prompt+=`\n${st?.name} — "${cr?.title}"
-  Crisis: ${cr?.body}
-  Call: ${dec.call}
-  Reasoning (${wc(dec.reason||'')} words): "${dec.reason||'(empty)'}"
-`;
-  });
+  prompt+='\n--- YEAR 2 DECISIONS ---\n';
+  if(!hasY2){
+    prompt+='NOT REACHED — candidate ran out of time before Year 2. Do NOT evaluate Year 2 adaptability or invent any decisions.\n';
+  } else {
+    prompt+='Y2 Budget: '+fmt(calcY2Budget())+'\n';
+    y2funded.forEach(s=>{
+      const st=STARTUPS.find(x=>x.id===s.id);
+      const r2d=S.r2diagnostics[s.id]||{};
+      const r2qs=R2_QUESTIONS[s.id];
+      prompt+='\n'+(st?.name)+': Allocated '+fmt(S.y2alloc[s.id]||0)+' in Year 2';
+      r2qs.forEach((q,i)=>{prompt+='\n    Q: '+q.q+'\n    A: '+(r2d['q'+i]||'(not answered)');});
+    });
+  }
+
+  prompt+='\n--- CRISIS DECISIONS ---\n';
+  if(!hasCrisis){
+    prompt+='NOT REACHED — candidate ran out of time before crisis stage. Do NOT evaluate crisis calls or invent any decisions.\n';
+  } else {
+    Object.entries(S.crisisCall||{}).forEach(([sid,dec])=>{
+      const st=STARTUPS.find(x=>x.id===sid);
+      const cr=CRISES[sid];
+      const hasReason=(dec.reason||'').trim().length>5;
+      prompt+='\n'+(st?.name)+' — "'+cr?.title+'"\n  Crisis: '+cr?.body+'\n  Call: '+dec.call+'\n  Reasoning ('+wc(dec.reason||'')+' words): "'+(hasReason?dec.reason:'(no reasoning entered — candidate left blank or entered gibberish)')+'"\n';
+    });
+  }
+
+  const y2instr=hasY2
+    ?'Did they respond intelligently to the Year 1 outcomes? Did losses change their strategy meaningfully?'
+    :'Write exactly: "NOT EVALUATED — candidate did not reach Year 2 before time expired." No further commentary.';
+  const crisisInstr=hasCrisis
+    ?'Rate each crisis call (Good/Acceptable/Poor) with one-line reason. If reasoning is blank or gibberish, flag it explicitly — do not rate it positively.'
+    :'Write exactly: "NOT EVALUATED — candidate did not reach the crisis stage before time expired." No further commentary.';
 
   prompt+=`
 --- YOUR EVALUATION TASK ---
 Write a structured markdown evaluation with these exact sections:
 
 ## Executive Summary
-2-3 sentences. Overall strategic quality. Strongest decision. Biggest mistake.
+2-3 sentences. Overall strategic quality. Strongest decision. Biggest mistake. If candidate ran out of time before completing all stages, say so explicitly.
 
 ## Portfolio Decisions
-For EACH funded startup, one bullet: was the expense allocation strategic or scattered? Did the diagnostic answers show actual understanding? Note any obvious mistakes. Be specific (e.g. "Spent 40% on Marketing for a pre-product startup with no product to market").
+For EACH funded startup, one bullet: was the expense allocation strategic or scattered? Did the diagnostic answers show actual understanding? Be specific (e.g. "Spent 40% on Marketing for a pre-product startup with no product to market").
 
-## Year 2 Adaptability  
-Did they respond intelligently to the Year 1 outcomes? Did losses change their strategy meaningfully?
+## Year 2 Adaptability
+${y2instr}
 
 ## Crisis Call Quality
-Rate each crisis call (Good/Acceptable/Poor) with one-line reason. Note if reasoning is specific or vague.
+${crisisInstr}
 
 ## AI Usage Indicator
-Flag if any reasoning reads as AI-generated (overly structured, uses MBA jargon without conviction, hits exactly 40 words, generic pros/cons format, lacks any personal voice or original framing). Rate: Likely Original / Possibly AI-Assisted / Likely AI-Generated.
+Flag if any reasoning reads as AI-generated (overly structured, MBA jargon without conviction, exactly 40 words, generic format, no personal voice). If no reasoning was submitted, write: "No reasoning submitted — cannot evaluate." Rate: Likely Original / Possibly AI-Assisted / Likely AI-Generated / No Data.
 
 ## Scores (out of 10)
 - Strategic Thinking: X/10
-- Business Understanding: X/10  
-- Adaptability: X/10
-- Reasoning Quality: X/10
+- Business Understanding: X/10
+- Adaptability: X/10 (write N/A if Year 2 not reached)
+- Reasoning Quality: X/10 (write N/A if no crisis reasoning submitted)
 - **Overall: X/10**
 
 ## One Line for the Panel
 A single memorable sentence about this candidate.
 
-Be direct. Reference specific numbers and decisions from their data. Total length: 450-550 words.`;
+Be direct. Reference specific numbers and decisions. Total length: 450-550 words.`;
   return prompt;
 }
 
@@ -972,7 +984,8 @@ function drawTimesUp(){
   '<p style="max-width:380px;margin:.75rem auto 1.5rem">Your 45 minutes are up. Whatever decisions you made have been automatically saved and submitted. That\'s the simulation.</p>'+
   '<div class="ibox" style="max-width:420px;margin:0 auto 1rem">Your responses — everything entered so far — have been automatically saved and submitted. Team NEXORA has your data.</div>'+
   '<p class="muted" style="margin-top:1rem">You may close this window.</p></div>';
-  save(S.phase_completed||1, true);
+  S.timedOut=true;
+  save(3, true);
 }
 
 function drawAdminLogin(){
