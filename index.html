@@ -458,7 +458,7 @@ function drawTimerInfo(){
   (S.isNexora?'<div class="ibox" style="border-left:3px solid #4F46E5;margin-bottom:1rem">NEXORA Internal Test Mode — responses will be marked separately</div>':'')+
   '<h1 style="margin-bottom:.5rem">Before you begin</h1>'+
   '<div class="card" style="margin-bottom:1rem">'+
-  '<div style="font-size:32px;font-weight:800;color:#4F46E5;text-align:center;padding:.5rem 0">30:00</div>'+
+  '<div style="font-size:32px;font-weight:800;color:#4F46E5;text-align:center;padding:.5rem 0">'+fmtTime(TIMER_BASE)+'</div>'+
   '<p style="text-align:center;margin-bottom:.75rem">You have <b>45 minutes</b> to complete the entire simulation.</p>'+
   '<p style="text-align:center;margin-bottom:.75rem">The timer starts the moment you click the button below. It runs continuously. There is no pause.</p>'+
   '<p style="text-align:center;color:#DC2626;font-weight:600;font-size:13px">When time runs out, the simulation ends automatically.</p>'+
@@ -810,7 +810,7 @@ function drawR3Crisis(){
 
 function buildReportPrompt(){
   const funded=STARTUPS.filter(s=>(S.topAlloc[s.id]||0)>0);
-  const ext=(S.timerTotalSeconds-30*60)/60;
+  const ext=(S.timerTotalSeconds-TIMER_BASE)/60;
   const timeUsed=S.timerTotalSeconds-getRem();
   const DNA={
     tradetab:{Operations:40,HR:40,Finance:10,Marketing:5,Sales:5},
