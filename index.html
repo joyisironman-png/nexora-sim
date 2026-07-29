@@ -313,7 +313,7 @@ let S={screen:'home',user:null,savedId:null,detailIdx:0,topAlloc:{},diagnostics:
 function saveLocal(){try{localStorage.setItem('nexora_sim_v3',JSON.stringify(S));}catch(e){}}
 function loadLocal(){try{const d=localStorage.getItem('nexora_sim_v3');if(d){Object.assign(S,JSON.parse(d));return true;}}catch(e){}return false;}
 
-const SHEETS_URL='https://script.google.com/macros/s/AKfycbyKc-GdqJiarGGvHapIhs8a8uriNgjO8ZS110fb5evH7dutcl8sPFg7eqB6ooH8o66-xw/exec'; // Paste your Google Apps Script URL here after setup
+const SHEETS_URL=''; // Paste your Google Apps Script URL here after setup
 
 function toast(msg,type='err'){
   const d=document.createElement('div');
@@ -850,7 +850,8 @@ FULL BRIEFS PURCHASED (Rs.15L each): ${S.briefsRead.length} of 6 ventures (${S.b
   });
 
   const y2funded=STARTUPS.filter(s=>(S.y2alloc[s.id]||0)>0);
-  const hasY2=y2funded.length>0;
+  const hasY2Answers=Object.values(S.r2diagnostics||{}).some(d=>Object.keys(d||{}).length>0);
+  const hasY2=y2funded.length>0||hasY2Answers;
   const hasCrisis=Object.keys(S.crisisCall||{}).length>0;
 
   prompt+='\n--- YEAR 2 DECISIONS ---\n';
@@ -858,11 +859,13 @@ FULL BRIEFS PURCHASED (Rs.15L each): ${S.briefsRead.length} of 6 ventures (${S.b
     prompt+='NOT REACHED — candidate ran out of time before Year 2. Do NOT evaluate Year 2 adaptability or invent any decisions.\n';
   } else {
     prompt+='Y2 Budget: '+fmt(calcY2Budget())+'\n';
-    y2funded.forEach(s=>{
+    const y2startups=STARTUPS.filter(s=>(S.y2alloc[s.id]||0)>0||Object.keys(S.r2diagnostics[s.id]||{}).length>0);
+    y2startups.forEach(s=>{
       const st=STARTUPS.find(x=>x.id===s.id);
       const r2d=S.r2diagnostics[s.id]||{};
       const r2qs=R2_QUESTIONS[s.id];
-      prompt+='\n'+(st?.name)+': Allocated '+fmt(S.y2alloc[s.id]||0)+' in Year 2';
+      const alloc=S.y2alloc[s.id]||0;
+      prompt+='\n'+(st?.name)+': Allocated '+(alloc>0?fmt(alloc):'Rs.0 (answered questions but no capital deployed)')+' in Year 2';
       r2qs.forEach((q,i)=>{prompt+='\n    Q: '+q.q+'\n    A: '+(r2d['q'+i]||'(not answered)');});
     });
   }
