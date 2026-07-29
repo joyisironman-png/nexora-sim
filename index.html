@@ -459,7 +459,7 @@ function drawTimerInfo(){
   '<h1 style="margin-bottom:.5rem">Before you begin</h1>'+
   '<div class="card" style="margin-bottom:1rem">'+
   '<div style="font-size:32px;font-weight:800;color:#4F46E5;text-align:center;padding:.5rem 0">30:00</div>'+
-  '<p style="text-align:center;margin-bottom:.75rem">You have <b>30 minutes</b> to complete the entire simulation.</p>'+
+  '<p style="text-align:center;margin-bottom:.75rem">You have <b>45 minutes</b> to complete the entire simulation.</p>'+
   '<p style="text-align:center;margin-bottom:.75rem">The timer starts the moment you click the button below. It runs continuously. There is no pause.</p>'+
   '<p style="text-align:center;color:#DC2626;font-weight:600;font-size:13px">When time runs out, the simulation ends automatically.</p>'+
   '</div>'+
@@ -823,7 +823,7 @@ function buildReportPrompt(){
   let prompt=`You are evaluating a candidate's performance in a startup investment simulation for NEXORA, the incubator at XLRI Jamshedpur. Provide a concise, specific evaluation that a panel of MBA faculty can read in 2 minutes per candidate.
 
 CANDIDATE: ${S.user?.name} | ${S.user?.program} | Section ${S.user?.section} | Roll: ${S.user?.roll}
-TIME EXTENSION PURCHASED: ${ext>0?ext+' extra minutes at Rs.'+(ext*50)+'L cost':'None (used full 30 min budget)'}
+TIME EXTENSION PURCHASED: ${ext>0?ext+' extra minutes at Rs.'+(ext*50)+'L cost':'None (used full 45 min budget)'}
 TIME USED: ~${Math.round(timeUsed/60)} of ${S.timerTotalSeconds/60} minutes
 FULL BRIEFS PURCHASED (Rs.15L each): ${S.briefsRead.length} of 6 ventures (${S.briefsRead.join(', ')||'none'})
 
@@ -969,7 +969,7 @@ function drawTimesUp(){
   app().innerHTML='<div style="text-align:center;padding:3rem 1rem">'+
   '<div style="font-size:56px;margin-bottom:1rem">&#8987;</div>'+
   '<h1 style="font-size:28px;color:#DC2626;margin-bottom:.5rem">Time\'s up</h1>'+
-  '<p style="max-width:380px;margin:.75rem auto 1.5rem">Your 30 minutes are up. Whatever decisions you made have been automatically saved and submitted. That\'s the simulation.</p>'+
+  '<p style="max-width:380px;margin:.75rem auto 1.5rem">Your 45 minutes are up. Whatever decisions you made have been automatically saved and submitted. That\'s the simulation.</p>'+
   '<div class="ibox" style="max-width:420px;margin:0 auto 1rem">Your responses — everything entered so far — have been automatically saved and submitted. Team NEXORA has your data.</div>'+
   '<p class="muted" style="margin-top:1rem">You may close this window.</p></div>';
   save(S.phase_completed||1, true);
