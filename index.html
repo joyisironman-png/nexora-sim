@@ -69,7 +69,7 @@ const BUDGET_Y1=100000000;
 const BUDGET_Y2_BASE=100000000;
 const RESEARCH_COST=1500000;
 const EXT_COST_PER_MIN=5000000;
-const TIMER_BASE=30*60;
+const TIMER_BASE=45*60;
 const TIMER_MAX_EXT=15;
 
 const fmt=n=>{if(!n||n===0)return'Rs.0';const sign=n<0?'-':'';const a=Math.abs(n);if(a>=10000000)return sign+'Rs.'+(a/10000000).toFixed(2)+' Cr';if(a>=100000)return sign+'Rs.'+Math.round(a/100000)+'L';return sign+'Rs.'+Math.round(a).toLocaleString('en-IN');};
