@@ -491,6 +491,7 @@ window.beginSim=function(){
   S.timerEndTime=Date.now()+(S.timerTotalSeconds*1000);
   S.roundStarted=true;
   S.phaseTimestamps={simStart:new Date().toISOString()};
+  localStorage.removeItem('nexora_sim_v3');
   saveLocal();
   startCountdown();
   go('brief');
