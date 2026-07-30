@@ -69,6 +69,7 @@ const BUDGET_Y1=100000000;
 const BUDGET_Y2_BASE=100000000;
 const RESEARCH_COST=1500000;
 const EXT_COST_PER_MIN=5000000;
+const SIM_CLOSED=true;
 const TIMER_BASE=45*60;
 const TIMER_MAX_EXT=15;
 
@@ -85,6 +86,7 @@ function validateLogin(roll,email){
   const r=roll.trim().toUpperCase();
   const e=email.trim().toLowerCase();
   if(r.startsWith(NEXORA_PREFIX)){return{valid:true,isNexora:true};}
+  if(SIM_CLOSED){return{valid:false,reason:'The NEXORA Investment Simulation 2026 has now closed. Thank you for participating. Results will be communicated by Team NEXORA shortly.'};}
   if(!WHITELIST.includes(r)){return{valid:false,reason:'Your roll number ('+roll+') is not on the participant list. Contact Team NEXORA immediately.'};}
   if(!e.includes('@astra.xlri.ac.in')){return{valid:false,reason:'Please use your XLRI email address ending in @astra.xlri.ac.in'};}
   if(!e.includes(r.toLowerCase())){return{valid:false,reason:'Your email address does not match your roll number. Your email should contain '+r.toLowerCase()+'@astra.xlri.ac.in'};}
