@@ -313,7 +313,7 @@ let S={screen:'home',user:null,savedId:null,detailIdx:0,topAlloc:{},diagnostics:
 function saveLocal(){try{localStorage.setItem('nexora_sim_v3',JSON.stringify(S));}catch(e){}}
 function loadLocal(){try{const d=localStorage.getItem('nexora_sim_v3');if(d){Object.assign(S,JSON.parse(d));return true;}}catch(e){}return false;}
 
-const SHEETS_URL='https://script.google.com/macros/s/AKfycbyKc-GdqJiarGGvHapIhs8a8uriNgjO8ZS110fb5evH7dutcl8sPFg7eqB6ooH8o66-xw/exec'; // Paste your Google Apps Script URL here after setup
+const SHEETS_URL=''; // Paste your Google Apps Script URL here after setup
 
 function toast(msg,type='err'){
   const d=document.createElement('div');
@@ -363,26 +363,33 @@ function buildFinancialSummary(){
 function save(phase, isFinal=false){
   saveLocal();
   if(!SHEETS_URL||!S.user)return;
-  // Record phase completion timestamp
   const now=new Date().toISOString();
   if(phase===1)S.phaseTimestamps.p1End=now;
   if(phase===2)S.phaseTimestamps.p2End=now;
   if(phase===3)S.phaseTimestamps.p3End=now;
   saveLocal();
+  // Build optional fields separately so a crash there never kills the whole save
+  let reportPrompt=null,finSummary=null;
+  if(isFinal){
+    try{reportPrompt=buildReportPrompt(false);}catch(e){console.error('buildReportPrompt failed',e);}
+    try{finSummary=buildFinancialSummary();}catch(e){console.error('buildFinancialSummary failed',e);}
+  }
   const form=new URLSearchParams();
-  form.append('data',JSON.stringify({
-    candidate:{name:S.user.name||'',roll:S.user.roll||'',program:S.user.program||'',section:S.user.section||''},
-    simulation_data:{top_alloc:S.topAlloc,expenses:S.expenses,diagnostics:S.diagnostics,
-      y2alloc:S.y2alloc,r2diagnostics:S.r2diagnostics,crisis_call:S.crisisCall,
-      briefs_read:S.briefsRead,research_spent:S.researchSpent,extension_cost:S.extensionCost,
-      timed_out:S.timedOut||false},
-    report_prompt:isFinal?buildReportPrompt(false):null,
-    financial_summary:isFinal?buildFinancialSummary():null,
-    phase_timestamps:S.phaseTimestamps,
-    phase_completed:phase,is_final:isFinal,
-    submitted_at:now
-  }));
-  fetch(SHEETS_URL,{method:'POST',body:form}).catch(()=>{});
+  try{
+    form.append('data',JSON.stringify({
+      candidate:{name:S.user.name||'',roll:S.user.roll||'',program:S.user.program||'',section:S.user.section||''},
+      simulation_data:{top_alloc:S.topAlloc,expenses:S.expenses,diagnostics:S.diagnostics,
+        y2alloc:S.y2alloc,r2diagnostics:S.r2diagnostics,crisis_call:S.crisisCall,
+        briefs_read:S.briefsRead,research_spent:S.researchSpent,extension_cost:S.extensionCost,
+        timed_out:S.timedOut||false},
+      report_prompt:reportPrompt,
+      financial_summary:finSummary,
+      phase_timestamps:S.phaseTimestamps,
+      phase_completed:phase,is_final:isFinal,
+      submitted_at:now
+    }));
+  }catch(e){console.error('save JSON.stringify failed',e);return;}
+  fetch(SHEETS_URL,{method:'POST',body:form}).catch(e=>console.error('save fetch failed',e));
 }
 
 let timerInt=null;
